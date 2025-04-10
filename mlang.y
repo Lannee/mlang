@@ -14,7 +14,7 @@ int yyparse();
 
 void yyerror(const char *s);
 
-std::vector<mlang::statement *> *prog;
+std::vector<mlang::expression *> *prog;
 
 %}
 
@@ -25,7 +25,7 @@ std::vector<mlang::statement *> *prog;
     std::vector<mlang::expression *> *expr_list_t;
     mlang::expression *expr_t;
     mlang::statement *stmt_t;
-    mlang::type_t *value_t;
+    mlang::type *value_t;
 }
 
 // constant tokens
@@ -50,12 +50,8 @@ std::vector<mlang::statement *> *prog;
 %%
 
 program
-	: /* empty */               { prog = new std::vector<mlang::statement *>(0); }
-	| program stmt              { prog->push_back($2); }
-;
-
-stmt
-    : expr                      { $$ = $1; }
+	: /* empty */               { prog = new std::vector<mlang::expression *>(0); }
+	| program expr              { prog->push_back($2); }
 ;
 
 expr
@@ -65,8 +61,8 @@ expr
 ;
 
 expr_list
-    : expr                              { $$ = new std::vector<mlang::expression*>(1, $1); }
-    | expr_list HASH expr    { 
+    : expr                            { $$ = new std::vector<mlang::expression *>(1, $1); }
+    | expr_list HASH expr             { 
                                         $1->push_back($3);
  								        $$ = $1;
                                       }
@@ -81,8 +77,13 @@ value
 int main(int argc, char **argv){
     yyparse();
 
-    std::cout << "prog size : " << prog->size() << std::endl;
-	
+    mlang::context ctx{};
+
+    for(auto s : *prog) {
+        std::cout << "a" << std::endl;
+        s->value(ctx);
+    }
+
 	return 0;
 }
 

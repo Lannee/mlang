@@ -7,48 +7,64 @@
 #include <optional>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace mlang {
 
-class type_t;
+class type;
+class unit_type;
 
 class context {
 public:
-    void set_global_variable(std::string_view name, const type_t* value);
 
-    void set_local_variable(std::string_view name, const type_t* value);
+    context() : variables_(1) {}
 
-    std::optional<const type_t *> get_variable(std::string_view name);
+    void set_global_variable(std::string_view name, const type* value);
+
+    void set_local_variable(std::string_view name, const type* value);
+
+    std::optional<const type *> get_variable(std::string_view name);
 
     inline void new_scope();
 
+    void print_state(std::ostream &os) const;
+
 private:
-    std::list<std::unordered_map<std::string, const type_t *>> variables_;
+    std::list<std::unordered_map<std::string, const type *>> variables_;
 };
 
-class statement {
+class expression {
 public:
-    virtual void execute(context *ctx) const = 0;
-};
-
-class expression : public statement {
-public:
-    virtual const mlang::type_t *value() const = 0;
-    virtual void execute(context *ctx) const { value(); }
+    virtual const mlang::type *value(context &ctx) const = 0;
 };
 
 enum class type_kind {
+    UNIT,
     INTEGER,
     STRING,
     STRUCT
 };
 
-class type_t : public expression {
+class type : public expression {
 public:
     virtual type_kind get_kind() const = 0;
 };
 
-class integer_type : public type_t {
+class unit_type : public type {
+public:
+    type_kind get_kind() const { return type_kind::UNIT; };
+    const type *value(context &_) const { return this; }
+};
+
+constexpr unit_type UNIT__{};
+
+class statement : public expression {
+public:
+    const mlang::type *value(context &ctx) const { execute(ctx); return &UNIT__; }
+    virtual void execute(context &ctx) const = 0;
+};
+
+class integer_type : public type {
 public:
 
     integer_type(uint32_t data) : data_(data) {}
@@ -59,21 +75,21 @@ public:
 
     type_kind get_kind() const { return type_kind::INTEGER; };
 
-    const type_t *value() const { return this; }
+    const type *value(context &_) const { return this; }
 
     integer_type operator+(integer_type const& obj) { return integer_type(data_ + obj.data_); }
     integer_type operator-(integer_type const& obj) { return integer_type(data_ - obj.data_); }
     integer_type operator*(integer_type const& obj) { return integer_type(data_ * obj.data_); }
     integer_type operator/(integer_type const& obj) { return integer_type(data_ / obj.data_); }
 private:
-    uint32_t data_;
+    int data_;
 };
 
 class expr_list : public expression {
 public:
     expr_list(std::vector<expression *> *exprs) : exprs_(exprs) {}
 
-    const type_t *value() const { return exprs_->back()->value(); }
+    const type *value(context &ctx) const { return exprs_->back()->value(ctx); }
 
 private:
     const std::vector<expression *> *exprs_;
@@ -81,12 +97,11 @@ private:
 
 class var_decl : public expression {
 public:
-    var_decl(std::string_view name, expression *expr) : var_name_(name), expr_(expr) {}
-    
-    virtual void execute(context *ctx) const { ctx->set_local_variable(var_name_, 
-                                                                        value()  ); }
+    var_decl(std::string_view name, expression *expr) : var_name_(name), expr_(expr) { std::cout << "name = " << var_name_ << std::endl; }
 
-    const type_t *value() const { return expr_->value(); }
+    const type *value(context &ctx) const { auto value = expr_->value(ctx);
+                                            ctx.set_local_variable(var_name_, value );
+                                            return value; }
 
 private:
     const std::string var_name_;

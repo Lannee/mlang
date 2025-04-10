@@ -1,12 +1,3 @@
-let a = 
-    let b = 
-        let c = 0
+let a = 1
 
-let a = begin
-
-    let a = 1 # 
-    let b = 2 #
-    1
-
-end
-
+let b = let c = 1
