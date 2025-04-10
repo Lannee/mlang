@@ -1,99 +1,91 @@
+%require "3.2"
+
 %{
 #include <cstdio>
+#include <cstdint>
 #include <iostream>
 #include <vector>
 #include <string>
 
-extern "C" int yylex();
-extern "C" int yyparse();
-extern "C" FILE *yyin;
-extern "C" int yywrap();
+#include "ast.hh"
+
+int yylex();
+int yyparse();
 
 void yyerror(const char *s);
 
-#include "expression.hh"
+std::vector<mlang::statement *> *prog;
 
 %}
 
 // token type definition
 %union {
-	int int_val;
+	uint8_t int_val;
 	char *str_val;
-	std::vector<std::string> *sList;
-    mlang::type *type_val;
+    std::vector<mlang::expression *> *expr_list_t;
+    mlang::expression *expr_t;
+    mlang::statement *stmt_t;
+    mlang::type_t *value_t;
 }
 
 // constant tokens
-%token WRITELN
 %token ASSIGNMENT
-%token ENDL
+%token BGN END HASH
+%token LET
+%token EQUAL
 
 // terminal symbols
 %token <int_val> INT
 %token <str_val> STRING
-%token <type_val> TYPE
 %token <str_val> VAR
 
 // non-terminal symbols
-%type <str_val> comp
-%type <sList> stringList
+%type <stmt_t> stmt
+%type <expr_list_t> expr_list
+%type <expr_t> expr
+%type <value_t> value
+
+%start program
 
 %%
 
-input:
-	/* empty */
-	| input line
+program
+	: /* empty */               { prog = new std::vector<mlang::statement *>(0); }
+	| program stmt              { prog->push_back($2); }
 ;
 
-line:
-	ENDL
-	| stmt ENDL
+stmt
+    : expr                      { $$ = $1; }
 ;
 
-stmt:
-    expr
-    | WRITELN expr			    { $$ = new Writeln($2); }
+expr
+    : value                           { $$ = $1; }
+    | BGN expr_list END               { $$ = new mlang::expr_list($2); }
+    | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); }
 ;
 
-expr:
-    type_value
-    | BEGIN expr_list END             { $$ = }
-    | LET VAR ASSIGNMENT expr
-;
-
-expr_list:
-    expr                              { $$ = new std::vector<expression*>(1, $1); }
-    | expr_list expr_list_sep expr    { 
+expr_list
+    : expr                              { $$ = new std::vector<mlang::expression*>(1, $1); }
+    | expr_list HASH expr    { 
                                         $1->push_back($3);
  								        $$ = $1;
                                       }
 ;
 
-expr_list_sep:
-    ENDL
-    | END
-;
-
-typed_value:
-    INT                     { $$ = int_val; }
+value
+    : INT                     { $$ = new mlang::integer_type($1); }
 ;
 
 %%
 
 int main(int argc, char **argv){
     yyparse();
+
+    std::cout << "prog size : " << prog->size() << std::endl;
 	
 	return 0;
 }
 
-void yyerror(const char *s){
+void yyerror(const char *s) {
 	std::cout << "Error: " << s << std::endl;
-}
-
-int yywrap(){
-	if( yyin == stdin )
-		return 1;
-	fclose(yyin);
-	yyin = stdin;
-	return 0;
 }

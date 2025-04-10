@@ -1,67 +1,40 @@
 %{
 
 #include <cstdio>
+#include <cstdint>
 #include <iostream>
 #include <vector>
+#include <cstring>
 
-#define YY_DECL extern "C" int yylex()
+#include "ast.hh"
 
-#include "mlang.tab.h"
+#include "parser.tab.hh"
 
 %}
 
-ALPHA    [A-Z]	
+ALPHA    [A-Za-z]
 DIGIT    [0-9]
 
 %%
 
-[ \t]+	;		// skip white space
-{DIGIT}+		{ yylval.iVal = atoi(yytext); return INT; }
+[ \t\n]	        {}
+{DIGIT}+		{ yylval.int_val = atoi(yytext); return INT; }
 \"[^\"\n]*\"	{	// remove the quote marks from either end
-					yylval.sVal = (char *)malloc(sizeof(char)*strlen(yytext)-1);
-					strncpy(yylval.sVal, yytext+1, strlen(yytext)-2);
-					yylval.sVal[strlen(yytext)-2] = '\0';	// terminate the string!
+					yylval.str_val = (char *)malloc(sizeof(char)*strlen(yytext)-1);
+					strncpy(yylval.str_val, yytext+1, strlen(yytext)-2);
+					yylval.str_val[strlen(yytext)-2] = '\0';	// terminate the string!
 					return STRING;
 				}
-(({DIGIT}+"."?)|("."{DIGIT}+)){DIGIT}*(E-?{DIGIT}+)?	{ yylval.dVal = atof(yytext); return DOUBLE; }
-writeln			{ return WRITELN; }
-RUN				{ return RUN; }
-LIST			{ return LIST; }
-,				{ return COMMA; }
-\n				{ return ENDL; }
-{ALPHA}{DIGIT}?	{ yylval.sVal = strdup(yytext); return VAR; }
-\+				{ return PLUS; }
--				{ return MINUS; }
-\*				{ return MULT; }
-\/				{ return DIV; }
-\^				{ return EXP; }
-SAVE			{ return SAVE; }
-UNSAVE			{ return UNSAVE; }
-NEW				{ return NEW; }
-OLD				{ return OLD; }
-CATALOG			{ return CATALOG; }
-SCRATCH			{ return SCRATCH; }
-RENAME			{ return RENAME; }
-LET				{ return LET; }
-GOTO			{ return GOTO; }
-END				{ return END; }
-IF				{ return IF; }
-THEN			{ return THEN; }
-DATA			{ return DATA; }
-READ			{ return READ; }
-FOR				{ return FOR; }
-TO				{ return TO; }
-STEP			{ return STEP; }
-NEXT			{ return NEXT; }
-\=				{ return EQUAL; }
-:\=				{ return ASSIGNMENT; }
-\<				{ return LESS; }
-\>				{ return GREATER; }
-\<\=			{ return LESSEQUAL; }
-\>\=			{ return GREATEREQUAL; }
-\<\>			{ return NOTEQUAL; }
-\(				{ return OPENPAREN; }
-\)				{ return CLOSEPAREN; }
-.	;			// skip any characters that aren't part of a recognized pattern
-
+#               { return HASH; }
+let				{ return LET; }
+begin 			{ return BGN; }
+end				{ return END; }
+\=\?			{ return EQUAL; }
+\=				{ return ASSIGNMENT; }
+{ALPHA}({ALPHA}|{DIGIT})*   { yylval.str_val = strdup(yytext); return VAR; }
+.	            { return 0; }
 %%
+
+int yywrap() {
+    return 1;
+}
