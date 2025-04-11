@@ -26,11 +26,13 @@ DIGIT    [0-9]
 					return STRING;
 				}
 #               { return HASH; }
+print           { return PRINT; }
 let				{ return LET; }
 begin 			{ return BGN; }
 end				{ return END; }
 \=\?			{ return EQUAL; }
 \=				{ return ASSIGNMENT; }
+T               { return UNIT; }
 {ALPHA}({ALPHA}|{DIGIT})*   { yylval.str_val = strdup(yytext); return VAR; }
 .	            { return 0; }
 %%

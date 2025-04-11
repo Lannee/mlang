@@ -48,12 +48,14 @@ enum class type_kind {
 class type : public expression {
 public:
     virtual type_kind get_kind() const = 0;
+    virtual std::string repr() const = 0;
 };
 
 class unit_type : public type {
 public:
     type_kind get_kind() const { return type_kind::UNIT; };
     const type *value(context &_) const { return this; }
+    std::string repr() const { return "T"; }  
 };
 
 constexpr unit_type UNIT__{};
@@ -62,6 +64,15 @@ class statement : public expression {
 public:
     const mlang::type *value(context &ctx) const { execute(ctx); return &UNIT__; }
     virtual void execute(context &ctx) const = 0;
+};
+
+class print_statement : public statement {
+public:
+    print_statement(const expression *expr) : expr_(expr) {}
+    void execute(context &ctx) const { std::cout << expr_->value(ctx)->repr(); }
+
+private:
+    const expression *expr_;
 };
 
 class integer_type : public type {
@@ -77,6 +88,8 @@ public:
 
     const type *value(context &_) const { return this; }
 
+    std::string repr() const { return std::to_string(data_); }  
+
     integer_type operator+(integer_type const& obj) { return integer_type(data_ + obj.data_); }
     integer_type operator-(integer_type const& obj) { return integer_type(data_ - obj.data_); }
     integer_type operator*(integer_type const& obj) { return integer_type(data_ * obj.data_); }
@@ -87,17 +100,17 @@ private:
 
 class expr_list : public expression {
 public:
-    expr_list(std::vector<expression *> *exprs) : exprs_(exprs) {}
+    expr_list(std::vector<const expression *> *exprs) : exprs_(exprs) {}
 
     const type *value(context &ctx) const { return exprs_->back()->value(ctx); }
 
 private:
-    const std::vector<expression *> *exprs_;
+    const std::vector<const expression *> *exprs_;
 };
 
 class var_decl : public expression {
 public:
-    var_decl(std::string_view name, expression *expr) : var_name_(name), expr_(expr) { std::cout << "name = " << var_name_ << std::endl; }
+    var_decl(std::string_view name, const expression *expr) : var_name_(name), expr_(expr) { }
 
     const type *value(context &ctx) const { auto value = expr_->value(ctx);
                                             ctx.set_local_variable(var_name_, value );
