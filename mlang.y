@@ -44,6 +44,7 @@ std::vector<const mlang::expression *> *prog;
 // non-terminal symbols
 %type <stmt_t> stmt
 %type <expr_list_t> expr_list
+%type <expr_list_t> exprs
 %type <expr_t> expr
 %type <value_t> value
 
@@ -52,28 +53,24 @@ std::vector<const mlang::expression *> *prog;
 %%
 
 program
-	: /* empty */               { prog = new std::vector<const mlang::expression *>(0); }
-	| program expr              { prog->push_back($2); }
+	: exprs                           { prog = $1; }
+;
+
+exprs
+    : /* empty */                     { $$ = new std::vector<const mlang::expression *>(0); }
+	| exprs expr                      { $1->push_back($2); }
 ;
 
 expr
     : value                           { $$ = $1; }
     | VAR                             { $$ = new mlang::variable($1); free($1); }
-    | BGN expr_list END               { $$ = new mlang::expr_list($2); }
+    | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); free($2); }
     | stmt
 ;
 
 stmt
-    : PRINT expr_list                 { $$ = new mlang::print_statement($2); }
-;
-
-expr_list
-    : expr                            { $$ = new std::vector<const mlang::expression *>(1, $1); }
-    | expr_list HASH expr             { 
-                                        $1->push_back($3);
- 								        $$ = $1;
-                                      }
+    : PRINT exprs                     { $$ = new mlang::print_statement($2); }
 ;
 
 value

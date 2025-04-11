@@ -29,6 +29,8 @@ public:
 
     void print_state(std::ostream &os) const;
 
+    // ~context();
+
 private:
     std::list<std::unordered_map<std::string, const type *>> variables_;
 };
@@ -71,6 +73,7 @@ class print_statement : public statement {
 public:
     print_statement(const std::vector<const mlang::expression *> *exprs) : exprs_(exprs) {}
     void execute(context &ctx) const;
+    ~print_statement();
 
 private:
     const std::vector<const mlang::expression *> *exprs_;
@@ -128,6 +131,8 @@ public:
     const type *value(context &ctx) const { auto value = expr_->value(ctx);
                                             ctx.set_local_variable(var_name_, value );
                                             return value; }
+
+    ~var_decl();                                            
 
 private:
     const std::string var_name_;

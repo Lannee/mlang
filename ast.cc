@@ -24,9 +24,21 @@ const type *context::get_variable(std::string_view name) {
 
 inline void context::new_scope() { variables_.emplace_front(); }
 
+// context::~context() {
+//     for(auto &m : variables_)
+//         for(auto [_, t] : m) delete t;
+// }
+
 void print_statement::execute(context &ctx) const {
     for(const auto &expr : *exprs_)
         std::cout << expr->value(ctx)->repr(); 
 }
+
+print_statement::~print_statement() {
+    for(auto *e : *exprs_) delete e;
+    delete exprs_;
+}
+
+var_decl::~var_decl() { delete expr_; }
 
 }
