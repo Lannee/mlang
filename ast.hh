@@ -38,7 +38,7 @@ private:
 
 class expression {
 public:
-    virtual const mlang::type *value(context &ctx) const = 0;
+    virtual const type *value(context &ctx) const = 0;
     virtual ~expression() {}
 };
 
@@ -90,24 +90,24 @@ const unit_type UNIT__{};
 
 class statement : public expression {
 public:
-    const mlang::type *value(context &ctx) const { execute(ctx); return &UNIT__; }
+    const type *value(context &ctx) const { execute(ctx); return &UNIT__; }
     virtual void execute(context &ctx) const = 0;
 };
 
 class print_statement : public statement {
 public:
-    print_statement(const std::vector<const mlang::expression *> *exprs) : exprs_(exprs) {}
+    print_statement(const std::vector<const expression *> *exprs) : exprs_(exprs) {}
     void execute(context &ctx) const;
     ~print_statement();
 
 private:
-    const std::vector<const mlang::expression *> *exprs_;
+    const std::vector<const expression *> *exprs_;
 };
 
 class if_expression : public expression {
 public:
     if_expression(const expression *cond, const expression *then, const expression *otherwise) : cond_(cond), then_(then), otherwise_(otherwise) {}
-    const mlang::type *value(context &ctx) const;
+    const type *value(context &ctx) const;
     ~if_expression();
 
 private:
