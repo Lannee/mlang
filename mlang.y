@@ -34,7 +34,7 @@ mlang::expr_list *prog;
 %token LET
 %token EQUAL
 %token UNIT
-%token PRINT
+%token PRINT COMMA
 
 // terminal symbols
 %token <int_val> INT
@@ -44,7 +44,7 @@ mlang::expr_list *prog;
 // non-terminal symbols
 %type <stmt_t> stmt
 %type <expr_list_t> expr_list
-%type <expr_list_t> exprs
+%type <expr_list_t> exprs args
 %type <expr_t> expr
 %type <value_t> value
 
@@ -70,7 +70,12 @@ expr
 ;
 
 stmt
-    : PRINT exprs                     { $$ = new mlang::print_statement($2); }
+    : PRINT args                      { $$ = new mlang::print_statement($2); }
+;
+
+args
+    : expr                            { $$ = new std::vector<const mlang::expression *>(1, $1); }
+    | args COMMA expr                 { $1->push_back($3); }
 ;
 
 value

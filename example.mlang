@@ -3,6 +3,7 @@ let b = begin
     let c = 2
     let d = 4
     let e = 5
+    print a
 end
 
-print a b c d e
+print a, b, c, d, e, "fgfdv"

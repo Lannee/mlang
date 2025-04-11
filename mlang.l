@@ -33,6 +33,7 @@ end				{ return END; }
 \=\?			{ return EQUAL; }
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }
+, 				{ return COMMA; }
 {ALPHA}({ALPHA}|{DIGIT})*   { yylval.str_val = strdup(yytext); return VAR; }
 .	            { return 0; }
 %%
