@@ -79,10 +79,6 @@ class integer_type : public type {
 public:
 
     integer_type(uint32_t data) : data_(data) {}
-    integer_type(uint8_t *data, size_t len) {
-        assert(len == 4);
-        memcpy(&data_, data, len);
-    }
 
     type_kind get_kind() const { return type_kind::INTEGER; };
 
@@ -96,6 +92,22 @@ public:
     integer_type operator/(integer_type const& obj) { return integer_type(data_ / obj.data_); }
 private:
     int data_;
+};
+
+class string_type : public type {
+public:
+
+    string_type(std::string_view data) : data_(data) {}
+
+    type_kind get_kind() const { return type_kind::STRING; };
+
+    const type *value(context &_) const { return this; }
+
+    std::string repr() const { return data_; }  
+
+    string_type operator+(string_type const& obj) { return string_type(data_ + obj.data_); }
+private:
+    std::string data_;
 };
 
 class expr_list : public expression {

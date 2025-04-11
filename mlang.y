@@ -58,9 +58,9 @@ program
 
 expr
     : value                           { $$ = $1; }
-    | VAR                             { $$ = new mlang::variable($1); }
+    | VAR                             { $$ = new mlang::variable($1); free($1); }
     | BGN expr_list END               { $$ = new mlang::expr_list($2); }
-    | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); }
+    | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); free($2); }
     | stmt
 ;
 
@@ -78,6 +78,7 @@ expr_list
 
 value
     : INT                     { $$ = new mlang::integer_type($1); }
+    | STRING                  { $$ = new mlang::string_type($1); free($1); }
     | UNIT                    { $$ = &mlang::UNIT__; }
 ;
 
