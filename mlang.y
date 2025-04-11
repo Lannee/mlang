@@ -93,7 +93,7 @@ int main(int argc, char **argv){
 
     auto *ret = prog->value(ctx);
 
-    int status = ret->as_exit_code();
+    int status = ret->to_integer_type().data__();
 
     delete prog;
 	return status;
