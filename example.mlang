@@ -6,4 +6,4 @@ let b = begin
     print a
 end
 
-print a, b, c, d, e, "fgfdv"
+print a, b, c, d, e

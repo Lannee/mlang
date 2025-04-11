@@ -52,13 +52,15 @@ class type : public expression {
 public:
     virtual type_kind get_kind() const = 0;
     virtual std::string repr() const = 0;
+    virtual int as_exit_code() const = 0;
 };
 
 class unit_type : public type {
 public:
     type_kind get_kind() const { return type_kind::UNIT; };
     const type *value(context &_) const { return this; }
-    std::string repr() const { return "T"; }  
+    std::string repr() const { return "T"; } 
+    int as_exit_code() const override { return 0; } 
 };
 
 const unit_type UNIT__{};
@@ -89,6 +91,7 @@ public:
     const type *value(context &_) const { return this; }
 
     std::string repr() const { return std::to_string(data_); }  
+    int as_exit_code() const override { return data_; } 
 
     integer_type operator+(integer_type const& obj) { return integer_type(data_ + obj.data_); }
     integer_type operator-(integer_type const& obj) { return integer_type(data_ - obj.data_); }
@@ -107,7 +110,8 @@ public:
 
     const type *value(context &_) const { return this; }
 
-    std::string repr() const { return data_; }  
+    std::string repr() const { return data_; } 
+    int as_exit_code() const override { return data_ != ""; }  
 
     string_type operator+(string_type const& obj) { return string_type(data_ + obj.data_); }
 private:

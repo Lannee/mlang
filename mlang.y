@@ -91,10 +91,12 @@ int main(int argc, char **argv){
 
     mlang::context ctx{};
 
-    prog->value(ctx);
+    auto *ret = prog->value(ctx);
+
+    int status = ret->as_exit_code();
 
     delete prog;
-	return 0;
+	return status;
 }
 
 void yyerror(const char *s) {
