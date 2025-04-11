@@ -14,7 +14,7 @@ int yyparse();
 
 void yyerror(const char *s);
 
-std::vector<const mlang::expression *> *prog;
+mlang::expr_list *prog;
 
 %}
 
@@ -53,7 +53,7 @@ std::vector<const mlang::expression *> *prog;
 %%
 
 program
-	: exprs                           { prog = $1; }
+	: exprs                           { prog = new mlang::expr_list($1); }
 ;
 
 exprs
@@ -86,12 +86,9 @@ int main(int argc, char **argv){
 
     mlang::context ctx{};
 
-    for(auto s : *prog) {
-        s->value(ctx);
-    }
+    prog->value(ctx);
 
-    for(auto s : *prog) delete s;
-
+    delete prog;
 	return 0;
 }
 
