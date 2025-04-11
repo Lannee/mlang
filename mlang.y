@@ -93,6 +93,8 @@ int main(int argc, char **argv){
         s->value(ctx);
     }
 
+    for(auto s : *prog) delete s;
+
 	return 0;
 }
 

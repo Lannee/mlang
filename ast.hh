@@ -36,6 +36,7 @@ private:
 class expression {
 public:
     virtual const mlang::type *value(context &ctx) const = 0;
+    virtual ~expression() {}
 };
 
 enum class type_kind {
@@ -58,7 +59,7 @@ public:
     std::string repr() const { return "T"; }  
 };
 
-constexpr unit_type UNIT__{};
+const unit_type UNIT__{};
 
 class statement : public expression {
 public:
