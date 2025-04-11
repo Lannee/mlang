@@ -27,7 +27,7 @@ public:
 
     inline void new_scope();
 
-    void print_state(std::ostream &os) const;
+    void print_state() const;
 
     // ~context();
 
@@ -118,7 +118,7 @@ class expr_list : public expression {
 public:
     expr_list(std::vector<const expression *> *exprs) : exprs_(exprs) {}
 
-    const type *value(context &ctx) const { return exprs_->back()->value(ctx); }
+    const type *value(context &ctx) const;
 
 private:
     const std::vector<const expression *> *exprs_;
@@ -128,8 +128,8 @@ class var_decl : public expression {
 public:
     var_decl(std::string_view name, const expression *expr) : var_name_(name), expr_(expr) { }
 
-    const type *value(context &ctx) const { auto value = expr_->value(ctx);
-                                            ctx.set_local_variable(var_name_, value );
+    const type *value(context &ctx) const { auto *value = expr_->value(ctx);
+                                            ctx.set_local_variable(var_name_, value);
                                             return value; }
 
     ~var_decl();                                            

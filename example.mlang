@@ -1,6 +1,8 @@
-print 
-    let a = 1 
-    begin 
-        let b = a 
-        let c = b
-    end
+let a = 1
+let b = begin
+    let c = 2
+    let d = 4
+    let e = 5
+end
+
+print a b c d e
