@@ -1,7 +1,8 @@
 let a = 1
 
-let b = let c = 2
+let b = T
 
-print a
+print a # 
+      b #
+      3 
 print b
-print c

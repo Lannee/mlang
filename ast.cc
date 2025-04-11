@@ -24,4 +24,9 @@ const type *context::get_variable(std::string_view name) {
 
 inline void context::new_scope() { variables_.emplace_front(); }
 
+void print_statement::execute(context &ctx) const {
+    for(const auto &expr : *exprs_)
+        std::cout << expr->value(ctx)->repr(); 
+}
+
 }

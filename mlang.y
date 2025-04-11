@@ -65,7 +65,7 @@ expr
 ;
 
 stmt
-    : PRINT expr                      { $$ = new mlang::print_statement($2); }
+    : PRINT expr_list                 { $$ = new mlang::print_statement($2); }
 ;
 
 expr_list

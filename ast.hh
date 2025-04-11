@@ -68,11 +68,11 @@ public:
 
 class print_statement : public statement {
 public:
-    print_statement(const expression *expr) : expr_(expr) {}
-    void execute(context &ctx) const { std::cout << expr_->value(ctx)->repr(); }
+    print_statement(const std::vector<const mlang::expression *> *exprs) : exprs_(exprs) {}
+    void execute(context &ctx) const;
 
 private:
-    const expression *expr_;
+    const std::vector<const mlang::expression *> *exprs_;
 };
 
 class integer_type : public type {
