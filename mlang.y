@@ -58,6 +58,7 @@ program
 
 expr
     : value                           { $$ = $1; }
+    | VAR                             { $$ = new mlang::variable($1); }
     | BGN expr_list END               { $$ = new mlang::expr_list($2); }
     | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); }
     | stmt

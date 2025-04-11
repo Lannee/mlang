@@ -23,7 +23,7 @@ public:
 
     void set_local_variable(std::string_view name, const type* value);
 
-    std::optional<const type *> get_variable(std::string_view name);
+    const type *get_variable(std::string_view name);
 
     inline void new_scope();
 
@@ -119,6 +119,15 @@ public:
 private:
     const std::string var_name_;
     const expression *expr_;
+};
+
+class variable : public expression {
+public:
+    variable(std::string_view name) : name_(name) {}
+    const type *value(context &ctx) const { return ctx.get_variable(name_)->value(ctx); }
+
+private:
+    const std::string name_;
 };
 
 }

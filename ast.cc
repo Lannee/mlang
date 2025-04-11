@@ -13,13 +13,13 @@ void context::set_local_variable(std::string_view name, const type* value) {
     variables_.front()[std::string(name)] = value;
 }
 
-std::optional<const type *> context::get_variable(std::string_view name) {
+const type *context::get_variable(std::string_view name) {
     auto _name = std::string(name);
     for (auto scope : variables_) {
         if(scope.count(std::string(_name))) return scope[_name];
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
 inline void context::new_scope() { variables_.emplace_front(); }
