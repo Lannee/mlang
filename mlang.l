@@ -25,11 +25,11 @@ DIGIT    [0-9]
 					yylval.str_val[strlen(yytext)-2] = '\0';	// terminate the string!
 					return STRING;
 				}
-#               { return HASH; }
 print           { return PRINT; }
 let				{ return LET; }
 begin 			{ return BGN; }
 end				{ return END; }
+if				{ return IF; }
 \=\?			{ return EQUAL; }
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }

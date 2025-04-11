@@ -30,11 +30,11 @@ mlang::expr_list *prog;
 
 // constant tokens
 %token ASSIGNMENT
-%token BGN END HASH
+%token BGN END COMMA IF
 %token LET
 %token EQUAL
 %token UNIT
-%token PRINT COMMA
+%token PRINT
 
 // terminal symbols
 %token <int_val> INT
@@ -71,6 +71,7 @@ expr
 
 stmt
     : PRINT args                      { $$ = new mlang::print_statement($2); }
+    | IF expr expr                    { $$ = new mlang::if_statement($2, $3); }
 ;
 
 args

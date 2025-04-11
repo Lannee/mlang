@@ -48,6 +48,16 @@ print_statement::~print_statement() {
     delete exprs_;
 }
 
+void if_statement::execute(context &ctx) const {
+    if (cond_->value(ctx)->to_integer_type().data__() > 0)
+        then_->value(ctx);
+}
+
+if_statement::~if_statement() {
+    delete cond_;
+    delete then_;
+}
+
 var_decl::~var_decl() { delete expr_; }
 
 const type *expr_list::value(context &ctx) const {

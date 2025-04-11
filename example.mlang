@@ -1,11 +1,12 @@
-let a = 1
+let a = ""
 let b = begin
     let c = 2
     let d = 4
     let e = 5
-    print a
 end
 
-print a, b, c, d, e
+let c = if a print "true"
+
+print c
 
 "fs"
