@@ -30,7 +30,7 @@ mlang::expr_list *prog;
 
 // constant tokens
 %token ASSIGNMENT
-%token BGN END COMMA IF
+%token BGN END COMMA IF ELSE
 %token LET
 %token EQUAL
 %token UNIT
@@ -66,12 +66,13 @@ expr
     | VAR                             { $$ = new mlang::variable($1); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); free($2); }
+    | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
+    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }
     | stmt
 ;
 
 stmt
     : PRINT args                      { $$ = new mlang::print_statement($2); }
-    | IF expr expr                    { $$ = new mlang::if_statement($2, $3); }
 ;
 
 args

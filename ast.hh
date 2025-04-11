@@ -104,15 +104,16 @@ private:
     const std::vector<const mlang::expression *> *exprs_;
 };
 
-class if_statement : public statement {
+class if_expression : public expression {
 public:
-    if_statement(const expression *cond, const mlang::expression *then) : cond_(cond), then_(then) {}
-    void execute(context &ctx) const;
-    ~if_statement();
+    if_expression(const expression *cond, const expression *then, const expression *otherwise) : cond_(cond), then_(then), otherwise_(otherwise) {}
+    const mlang::type *value(context &ctx) const;
+    ~if_expression();
 
 private:
     const expression *cond_;
     const expression *then_;
+    const expression *otherwise_;
 };
 
 class string_type : public type {

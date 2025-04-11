@@ -1,12 +1,12 @@
-let a = ""
+let a = 1
 let b = begin
     let c = 2
     let d = 4
     let e = 5
 end
 
-let c = if a print "true"
+let c = if a "true" else 1
 
 print c
 
-"fs"
+0

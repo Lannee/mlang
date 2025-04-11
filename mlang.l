@@ -30,6 +30,7 @@ let				{ return LET; }
 begin 			{ return BGN; }
 end				{ return END; }
 if				{ return IF; }
+else			{ return ELSE; }
 \=\?			{ return EQUAL; }
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }

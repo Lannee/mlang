@@ -48,14 +48,17 @@ print_statement::~print_statement() {
     delete exprs_;
 }
 
-void if_statement::execute(context &ctx) const {
+const type *if_expression::value(context &ctx) const {
     if (cond_->value(ctx)->to_integer_type().data__() > 0)
-        then_->value(ctx);
+        return then_->value(ctx);
+    if (otherwise_) return otherwise_->value(ctx);
+    return &UNIT__;
 }
 
-if_statement::~if_statement() {
+if_expression::~if_expression() {
     delete cond_;
     delete then_;
+    delete otherwise_;
 }
 
 var_decl::~var_decl() { delete expr_; }
