@@ -32,7 +32,14 @@ end				{ return END; }
 if				{ return IF; }
 else			{ return ELSE; }
 until 			{ return UNTIL; }
+
+\<\?			{ return LESS; }
+\>\?			{ return GREATER; }
+\<\=\?			{ return LESSEQUAL; }
+\>\=\?			{ return GREATEREQUAL; }
+\!\=\?			{ return NOTEQUAL; }
 \=\?			{ return EQUAL; }
+
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }
 , 				{ return COMMA; }

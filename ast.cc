@@ -5,6 +5,12 @@
 
 namespace mlang {
 
+static inline void __error(std::string_view message) 
+    { std::cerr << "Error: " << message << std::endl; exit(1); } 
+
+static inline void __warning(std::string_view message) 
+    { std::cerr << "Warning: " << message << std::endl; } 
+
 void context::set_global_variable(std::string_view name, const type* value) {
     variables_.back()[std::string(name)] = value;
 }
@@ -72,7 +78,26 @@ until_statement::~until_statement() {
     delete body_;
 }
 
+const type *var_decl::value(context &ctx) const { 
+    auto *value = expr_->value(ctx);
+
+    if(ctx.get_variable(var_name_))
+        __warning("redecaration of variable \"" + var_name_ + "\"");
+
+    ctx.set_local_variable(var_name_, value);
+    return value;
+}
+
 var_decl::~var_decl() { delete expr_; }
+
+const type *variable::value(context &ctx) const {
+    auto *var = ctx.get_variable(name_);
+    if(!var)
+        __error("usage of undefined symbol \"" + name_ + "\"");
+
+    return var->value(ctx);
+}
+
 
 const type *expr_list::value(context &ctx) const {
     // Creating local scope
@@ -85,6 +110,39 @@ const type *expr_list::value(context &ctx) const {
     ctx.pop_scope();
 
     return last_expr_value; 
+}
+
+const type *comp_expression::value(context &ctx) const { 
+    auto *l_value = l_->value(ctx);
+    auto *r_value = r_->value(ctx);
+
+    if(l_value->kind() == UNIT || r_value->kind() == UNIT)
+        __error("cannot execute compare operation on unit type");
+
+    // switch (l_value->kind()) {
+    // case UNIT:
+    //     return &UNIT__;
+    
+    // default:
+    //     break;
+    // }
+
+    // switch(op_) {
+    //     case comp_kind::EQUAL:
+    //         return l_value < r_value;
+    //     case comp_kind::NOTEQUAL: 
+    //         return l_value < r_value;
+    //     case comp_kind::GREATER: 
+    //         return l_value < r_value;
+    //     case comp_kind::GREATEREQUAL: 
+    //         return l_value < r_value;
+    //     case comp_kind::LESS: 
+    //         return l_value < r_value;
+    //     case comp_kind::LESSEQUAL: 
+    //         return l_value < r_value;    
+    // }
+
+    return nullptr;
 }
 
 }

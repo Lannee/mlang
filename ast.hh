@@ -43,7 +43,7 @@ public:
     virtual ~expression() {}
 };
 
-enum class type_kind {
+enum type_kind {
     UNIT,
     INTEGER,
     STRING,
@@ -52,7 +52,7 @@ enum class type_kind {
 
 class type : public expression {
 public:
-    virtual type_kind get_kind() const = 0;
+    virtual type_kind kind() const = 0;
     virtual std::string repr() const = 0;
     virtual integer_type to_integer_type() const = 0;
 };
@@ -62,7 +62,7 @@ public:
 
     integer_type(uint32_t data) : data_(data) {}
 
-    type_kind get_kind() const { return type_kind::INTEGER; };
+    type_kind kind() const { return type_kind::INTEGER; };
 
     const type *value(context &_) const { return this; }
 
@@ -71,17 +71,23 @@ public:
 
     uint32_t data__() const { return data_; }
 
-    integer_type operator+(integer_type const& obj) { return integer_type(data_ + obj.data_); }
-    integer_type operator-(integer_type const& obj) { return integer_type(data_ - obj.data_); }
-    integer_type operator*(integer_type const& obj) { return integer_type(data_ * obj.data_); }
-    integer_type operator/(integer_type const& obj) { return integer_type(data_ / obj.data_); }
+    integer_type operator+ (integer_type const& obj) const { return data_ +  obj.data_; }
+    integer_type operator- (integer_type const& obj) const { return data_ -  obj.data_; }
+    integer_type operator* (integer_type const& obj) const { return data_ *  obj.data_; }
+    integer_type operator/ (integer_type const& obj) const { return data_ /  obj.data_; }
+    integer_type operator> (integer_type const& obj) const { return data_ >  obj.data_; }
+    integer_type operator< (integer_type const& obj) const { return data_ <  obj.data_; }
+    integer_type operator>=(integer_type const& obj) const { return data_ >= obj.data_; }
+    integer_type operator<=(integer_type const& obj) const { return data_ <= obj.data_; }
+    integer_type operator==(integer_type const& obj) const { return data_ == obj.data_; }
+    integer_type operator!=(integer_type const& obj) const { return data_ != obj.data_; }
 private:
     uint32_t data_;
 };
 
 class unit_type : public type {
 public:
-    type_kind get_kind() const { return type_kind::UNIT; };
+    type_kind kind() const { return type_kind::UNIT; };
     const type *value(context &_) const { return this; }
     std::string repr() const { return "T"; } 
     integer_type to_integer_type() const override { return 0; } 
@@ -134,7 +140,7 @@ public:
 
     string_type(std::string_view data) : data_(data) {}
 
-    type_kind get_kind() const { return type_kind::STRING; };
+    type_kind kind() const { return type_kind::STRING; };
 
     const type *value(context &_) const { return this; }
 
@@ -160,9 +166,7 @@ class var_decl : public expression {
 public:
     var_decl(std::string_view name, const expression *expr) : var_name_(name), expr_(expr) { }
 
-    const type *value(context &ctx) const { auto *value = expr_->value(ctx);
-                                            ctx.set_local_variable(var_name_, value);
-                                            return value; }
+    const type *value(context &ctx) const;
 
     ~var_decl();                                            
 
@@ -174,10 +178,30 @@ private:
 class variable : public expression {
 public:
     variable(std::string_view name) : name_(name) {}
-    const type *value(context &ctx) const { return ctx.get_variable(name_)->value(ctx); }
+    const type *value(context &ctx) const;
 
 private:
     const std::string name_;
+};
+
+
+enum comp_kind {
+    EQUAL,
+    NOTEQUAL,
+    GREATER,
+    GREATEREQUAL,
+    LESS,
+    LESSEQUAL
+};
+
+class comp_expression : public expression {
+public:
+    comp_expression(const expression *l, comp_kind op, const expression *r) : l_(l), op_(op), r_(r) {}
+    const type *value(context &ctx) const;
+private:
+    const expression *r_;
+    comp_kind op_;
+    const expression *l_;
 };
 
 }

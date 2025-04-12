@@ -1,5 +1,7 @@
 let a = 1
 
-until a print a
+let b = b
+
+print b
 
 0

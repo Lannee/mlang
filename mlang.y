@@ -26,13 +26,14 @@ mlang::expr_list *prog;
     const mlang::expression *expr_t;
     const mlang::statement *stmt_t;
     const mlang::type *value_t;
+    mlang::comp_kind comp_t;
 }
 
 // constant tokens
 %token ASSIGNMENT
 %token BGN END COMMA IF ELSE UNTIL
 %token LET
-%token EQUAL
+%token EQUAL NOTEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token UNIT
 %token PRINT
 
@@ -46,6 +47,7 @@ mlang::expr_list *prog;
 %type <expr_list_t> exprs args
 %type <expr_t> expr
 %type <value_t> value
+%type <comp_t> comp
 
 %start program
 
@@ -65,6 +67,7 @@ expr
     | VAR                             { $$ = new mlang::variable($1); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); free($2); }
+    | expr comp expr                  { $$ = new mlang::comp_expression($1, $2, $3); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
     | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }
     | stmt
@@ -85,6 +88,14 @@ value
     | STRING                  { $$ = new mlang::string_type($1); free($1); }
     | UNIT                    { $$ = &mlang::UNIT__; }
 ;
+
+comp
+    : EQUAL                   { $$ = mlang::comp_kind::EQUAL; }
+    | NOTEQUAL                { $$ = mlang::comp_kind::NOTEQUAL; }
+    | GREATER                 { $$ = mlang::comp_kind::GREATER; }
+    | GREATEREQUAL            { $$ = mlang::comp_kind::GREATEREQUAL; }
+    | LESS                    { $$ = mlang::comp_kind::LESS; }
+    | LESSEQUAL               { $$ = mlang::comp_kind::LESSEQUAL; }
 
 %%
 
