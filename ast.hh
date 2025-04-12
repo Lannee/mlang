@@ -18,7 +18,7 @@ class integer_type;
 class context {
 public:
 
-    context() : variables_(1) {}
+    context() : variables_(0) {}
 
     void set_global_variable(std::string_view name, const type* value);
 
@@ -27,6 +27,7 @@ public:
     const type *get_variable(std::string_view name);
 
     inline void new_scope();
+    inline void pop_scope();
 
     void print_state() const;
 

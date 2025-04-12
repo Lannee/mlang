@@ -23,6 +23,7 @@ const type *context::get_variable(std::string_view name) {
 }
 
 inline void context::new_scope() { variables_.emplace_front(); }
+inline void context::pop_scope() { variables_.pop_front();     }
 
 void context::print_state() const {
     for(auto scope : variables_) {
@@ -64,10 +65,15 @@ if_expression::~if_expression() {
 var_decl::~var_decl() { delete expr_; }
 
 const type *expr_list::value(context &ctx) const {
+    // Creating local scope
+    ctx.new_scope();
+
     const type *last_expr_value = &UNIT__;
-    for(auto e : *exprs_) {
+    for(auto e : *exprs_)
         last_expr_value = e->value(ctx);
-    }
+    
+    ctx.pop_scope();
+
     return last_expr_value; 
 }
 
