@@ -31,6 +31,7 @@ begin 			{ return BGN; }
 end				{ return END; }
 if				{ return IF; }
 else			{ return ELSE; }
+until 			{ return UNTIL; }
 \=\?			{ return EQUAL; }
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }

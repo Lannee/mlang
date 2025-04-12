@@ -1,10 +1,5 @@
-let a = 0
-let b = begin
-    let c = 2
-    let d = 4
-    let e = 5
-end
+let a = 1
 
-print c  // throwing an error
+until a print a
 
 0

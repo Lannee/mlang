@@ -105,6 +105,18 @@ private:
     const std::vector<const expression *> *exprs_;
 };
 
+class until_statement : public statement {
+public:
+    until_statement(const expression *cond, const expression *body) : cond_(cond), body_(body) {}
+    void execute(context &ctx) const;
+    ~until_statement();
+
+private:
+    const expression *cond_;
+    const expression *body_;
+};
+
+
 class if_expression : public expression {
 public:
     if_expression(const expression *cond, const expression *then, const expression *otherwise) : cond_(cond), then_(then), otherwise_(otherwise) {}

@@ -30,7 +30,7 @@ mlang::expr_list *prog;
 
 // constant tokens
 %token ASSIGNMENT
-%token BGN END COMMA IF ELSE
+%token BGN END COMMA IF ELSE UNTIL
 %token LET
 %token EQUAL
 %token UNIT
@@ -72,6 +72,7 @@ expr
 
 stmt
     : PRINT args                      { $$ = new mlang::print_statement($2); }
+    | UNTIL expr expr                 { $$ = new mlang::until_statement($2, $3); }
 ;
 
 args

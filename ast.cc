@@ -62,6 +62,16 @@ if_expression::~if_expression() {
     delete otherwise_;
 }
 
+void until_statement::execute(context &ctx) const {
+    while (cond_->value(ctx)->to_integer_type().data__() > 0)
+        body_->value(ctx);
+}
+
+until_statement::~until_statement() {
+    delete cond_;
+    delete body_;
+}
+
 var_decl::~var_decl() { delete expr_; }
 
 const type *expr_list::value(context &ctx) const {
