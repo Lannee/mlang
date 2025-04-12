@@ -5,6 +5,6 @@ let b = begin
     let e = 5
 end
 
-print c
+print c  // throwing an error
 
 0

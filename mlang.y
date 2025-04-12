@@ -43,7 +43,6 @@ mlang::expr_list *prog;
 
 // non-terminal symbols
 %type <stmt_t> stmt
-%type <expr_list_t> expr_list
 %type <expr_list_t> exprs args
 %type <expr_t> expr
 %type <value_t> value
