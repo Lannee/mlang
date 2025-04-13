@@ -67,17 +67,17 @@ expr
     | IDENT                           { $$ = new mlang::variable($1); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET IDENT ASSIGNMENT expr       { $$ = new mlang::var_decl($2, $4); free($2); }
-//    | expr builtin_binop expr         { $$ = new mlang::comp_expression($1, $2, $3); }
+    | LET IDENT args ASSIGNMENT expr  { $$ = new mlang::var_decl($2, $5); free($2); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
     | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }                  
-    | stmt
+    | stmt                            { $$ = $1; }
 ;
 
 function_call
     : PRINT LARROW args                      { $$ = new mlang::print_function($3); }
     | TOSTR LARROW expr                      { $$ = new mlang::tostr_function($3); }
     | TOINT LARROW expr                      { $$ = new mlang::toint_function($3); }
-    | IDENT LARROW args                      { $$ = new mlang::function_call($1, $3); }
+    | IDENT LARROW args                      { $$ = new mlang::function_call($1, $3); free($1); }
 ;
 
 stmt
