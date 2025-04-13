@@ -1,3 +1,10 @@
-print toint "123aaa" // will print "123"
+let a = let b = begin
+    let c = 3
+    c
+end
 
-0
+print <- 
+    (print <- a, 2), 
+    b
+
+126

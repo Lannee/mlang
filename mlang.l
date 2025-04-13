@@ -25,12 +25,15 @@ DIGIT    [0-9]
 					yylval.str_val[strlen(yytext)-2] = '\0';	// terminate the string!
 					return STRING;
 				}
+\<- 			{ return LARROW; }
 print           { return PRINT; }
 toint           { return TOINT; }
 tostr           { return TOSTR; }
 let				{ return LET; }
+\( 				{ return BGN; }
 begin 			{ return BGN; }
-end				{ return END; }
+\)				{ return END; }
+end 			{ return END; }
 if				{ return IF; }
 else			{ return ELSE; }
 until 			{ return UNTIL; }

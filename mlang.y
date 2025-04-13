@@ -35,7 +35,7 @@ mlang::expr_list *prog;
 %token LET
 %token EQUAL NOTEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token UNIT
-%token PRINT TOSTR TOINT
+%token PRINT TOSTR TOINT LARROW
 
 // terminal symbols
 %token <int_val> INT
@@ -74,10 +74,10 @@ expr
 ;
 
 function_call
-    : PRINT args                      { $$ = new mlang::print_function($2); }
-    | TOSTR expr                      { $$ = new mlang::tostr_function($2); }
-    | TOINT expr                      { $$ = new mlang::toint_function($2); }
-    | IDENT args                      { $$ = new mlang::function_call($1, $2); }
+    : PRINT LARROW args                      { $$ = new mlang::print_function($3); }
+    | TOSTR LARROW expr                      { $$ = new mlang::tostr_function($3); }
+    | TOINT LARROW expr                      { $$ = new mlang::toint_function($3); }
+    | IDENT LARROW args                      { $$ = new mlang::function_call($1, $3); }
 ;
 
 stmt
