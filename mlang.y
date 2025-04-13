@@ -35,19 +35,18 @@ mlang::expr_list *prog;
 %token LET
 %token EQUAL NOTEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token UNIT
-%token PRINT
+%token PRINT TOSTR TOINT
 
 // terminal symbols
 %token <int_val> INT
 %token <str_val> STRING
-%token <str_val> VAR
+%token <str_val> IDENT
 
 // non-terminal symbols
 %type <stmt_t> stmt
 %type <expr_list_t> exprs args
-%type <expr_t> expr
+%type <expr_t> expr function_call
 %type <value_t> value
-%type <comp_t> comp
 
 %start program
 
@@ -64,18 +63,25 @@ exprs
 
 expr
     : value                           { $$ = $1; }
-    | VAR                             { $$ = new mlang::variable($1); free($1); }
+    | function_call 
+    | IDENT                           { $$ = new mlang::variable($1); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
-    | LET VAR ASSIGNMENT expr         { $$ = new mlang::var_decl($2, $4); free($2); }
-    | expr comp expr                  { $$ = new mlang::comp_expression($1, $2, $3); }
+    | LET IDENT ASSIGNMENT expr       { $$ = new mlang::var_decl($2, $4); free($2); }
+//    | expr builtin_binop expr         { $$ = new mlang::comp_expression($1, $2, $3); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
-    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }
+    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }                  
     | stmt
 ;
 
+function_call
+    : PRINT args                      { $$ = new mlang::print_function($2); }
+    | TOSTR expr                      { $$ = new mlang::tostr_function($2); }
+    | TOINT expr                      { $$ = new mlang::toint_function($2); }
+    | IDENT args                      { $$ = new mlang::function_call($1, $2); }
+;
+
 stmt
-    : PRINT args                      { $$ = new mlang::print_statement($2); }
-    | UNTIL expr expr                 { $$ = new mlang::until_statement($2, $3); }
+    : UNTIL expr expr                 { $$ = new mlang::until_statement($2, $3); }
 ;
 
 args
@@ -89,13 +95,14 @@ value
     | UNIT                    { $$ = &mlang::UNIT__; }
 ;
 
-comp
-    : EQUAL                   { $$ = mlang::comp_kind::EQUAL; }
-    | NOTEQUAL                { $$ = mlang::comp_kind::NOTEQUAL; }
-    | GREATER                 { $$ = mlang::comp_kind::GREATER; }
-    | GREATEREQUAL            { $$ = mlang::comp_kind::GREATEREQUAL; }
-    | LESS                    { $$ = mlang::comp_kind::LESS; }
-    | LESSEQUAL               { $$ = mlang::comp_kind::LESSEQUAL; }
+// builtin_binop
+//     : EQUAL                   { $$ = mlang::comp_kind::EQUAL; }
+//     | NOTEQUAL                { $$ = mlang::comp_kind::NOTEQUAL; }
+//     | GREATER                 { $$ = mlang::comp_kind::GREATER; }
+//     | GREATEREQUAL            { $$ = mlang::comp_kind::GREATEREQUAL; }
+//     | LESS                    { $$ = mlang::comp_kind::LESS; }
+//     | LESSEQUAL               { $$ = mlang::comp_kind::LESSEQUAL; }
+// ;
 
 %%
 

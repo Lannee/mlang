@@ -1,7 +1,3 @@
-let a = 1
-
-let b = b
-
-print b
+print toint "123aaa" // will print "123"
 
 0

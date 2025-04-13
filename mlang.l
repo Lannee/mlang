@@ -26,6 +26,8 @@ DIGIT    [0-9]
 					return STRING;
 				}
 print           { return PRINT; }
+toint           { return TOINT; }
+tostr           { return TOSTR; }
 let				{ return LET; }
 begin 			{ return BGN; }
 end				{ return END; }
@@ -43,7 +45,7 @@ until 			{ return UNTIL; }
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }
 , 				{ return COMMA; }
-{ALPHA}({ALPHA}|{DIGIT})*   { yylval.str_val = strdup(yytext); return VAR; }
+{ALPHA}({ALPHA}|{DIGIT})*   { yylval.str_val = strdup(yytext); return IDENT; }
 .	            { return 0; }
 %%
 

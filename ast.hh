@@ -101,11 +101,11 @@ public:
     virtual void execute(context &ctx) const = 0;
 };
 
-class print_statement : public statement {
+class print_function : public expression {
 public:
-    print_statement(const std::vector<const expression *> *exprs) : exprs_(exprs) {}
-    void execute(context &ctx) const;
-    ~print_statement();
+    print_function(const std::vector<const expression *> *exprs) : exprs_(exprs) {}
+    const type *value(context &ctx) const;
+    ~print_function();
 
 private:
     const std::vector<const expression *> *exprs_;
@@ -202,6 +202,38 @@ private:
     const expression *r_;
     comp_kind op_;
     const expression *l_;
+};
+
+class function_call : public expression {
+public:
+    function_call(std::string_view name, const std::vector<const expression *> *args) : name_(name), args_(args) {}
+    const type *value(context &ctx) const;
+    ~function_call();
+
+private:
+    const std::string name_; 
+    const std::vector<const expression *> *args_;
+};
+
+
+class tostr_function : public expression {
+public:
+    tostr_function(const expression *arg) : arg_(arg) {}
+    const string_type *value(context &ctx) const;
+    ~tostr_function() { delete arg_; }
+
+private:
+    const expression *arg_;
+};
+
+class toint_function : public expression {
+public:
+    toint_function(const expression *arg) : arg_(arg) {}
+    const integer_type *value(context &ctx) const;
+    ~toint_function() { delete arg_; }
+
+private:
+    const expression *arg_;
 };
 
 }

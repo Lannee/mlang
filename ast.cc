@@ -6,7 +6,7 @@
 namespace mlang {
 
 static inline void __error(std::string_view message) 
-    { std::cerr << "Error: " << message << std::endl; exit(1); } 
+    { std::cerr << "Error: " << message << std::endl; exit(1); }
 
 static inline void __warning(std::string_view message) 
     { std::cerr << "Warning: " << message << std::endl; } 
@@ -45,14 +45,45 @@ void context::print_state() const {
 //         for(auto [_, t] : m) delete t;
 // }
 
-void print_statement::execute(context &ctx) const {
+const type *print_function::value(context &ctx) const {
     for(const auto &expr : *exprs_)
         std::cout << expr->value(ctx)->repr(); 
+    return &UNIT__;
 }
 
-print_statement::~print_statement() {
+print_function::~print_function() {
     for(auto *e : *exprs_) delete e;
     delete exprs_;
+}
+
+const type *function_call::value(context &ctx) const {
+    std::cout << "function call" << std::endl;
+    return &UNIT__;
+}
+
+function_call::~function_call() {
+    for(auto *e : *args_) delete e;
+    delete args_;
+}
+
+const string_type *tostr_function::value(context &ctx) const {    
+    return new string_type(arg_->value(ctx)->repr());
+}
+
+const integer_type *toint_function::value(context &ctx) const {  
+    auto *value = arg_->value(ctx);  
+    switch(value->kind()) {
+        case UNIT   : return new integer_type(0);
+        case INTEGER: return static_cast<const integer_type *>(value);
+        case STRING : {
+            try {
+                return new integer_type(std::stoi(value->repr()));
+            } catch(const std::exception& e) {
+                __error("cannot conver str to type int");
+            }
+        }
+        case STRUCT: __error("cannot conver struct to type int");
+    }
 }
 
 const type *if_expression::value(context &ctx) const {
