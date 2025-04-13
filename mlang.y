@@ -23,7 +23,7 @@ mlang::expr_list *prog;
 	uint8_t int_val;
 	char *str_val;
     std::vector<const mlang::expression *> *expr_list_t;
-    std::vector<const std::string> *ident_list_t;
+    std::vector<std::string> *ident_list_t;
     const mlang::expression *expr_t;
     const mlang::statement *stmt_t;
     const mlang::type *value_t;
@@ -36,7 +36,7 @@ mlang::expr_list *prog;
 %token LET
 %token EQUAL NOTEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token UNIT
-%token PRINT TOSTR TOINT LARROW
+%token PRINT TOSTR TOINT LARROW SEMICOL
 
 // terminal symbols
 %token <int_val> INT
@@ -65,12 +65,12 @@ exprs
 
 expr
     : value                           { $$ = $1; }
-    | IDENT                           { $$ = new mlang::variable($1); free($1); }
+    | function_call
+    | IDENT                           { $$ = new mlang::function_call($1, nullptr); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
-    | LET IDENT ASSIGNMENT expr       { $$ = new mlang::var_decl($2, $4); free($2); }
+    | LET IDENT ASSIGNMENT expr       { $$ = new mlang::function_decl($2, $4); free($2); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
-    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }
-    | function_call                   
+    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }                   
     | stmt                            { $$ = $1; }
 ;
 
@@ -86,7 +86,7 @@ stmt
 ;
 
 args_decl
-    : IDENT                            { $$ = new std::vector<const std::string>(1, $1); }
+    : IDENT                            { $$ = new std::vector<std::string>(1, $1); }
     | args_decl COMMA IDENT            { $1->push_back($3); }
 ;
 
@@ -96,10 +96,10 @@ args
 ;
 
 value
-    : INT                     { $$ = new mlang::integer_type($1); }
-    | STRING                  { $$ = new mlang::string_type($1); free($1); }
-    | UNIT                    { $$ = &mlang::UNIT__; }
-    | args_decl expr          { $$ = new mlang::function_type($2, $5); }
+    : INT                             { $$ = new mlang::integer_type($1); }
+    | STRING                          { $$ = new mlang::string_type($1); free($1); }
+    | UNIT                            { $$ = &mlang::UNIT__; }
+    | args_decl SEMICOL expr          { $$ = new mlang::type($1, $3); }
 ;
 
 // builtin_binop
@@ -120,7 +120,7 @@ int main(int argc, char **argv){
 
     auto *ret = prog->value(ctx);
 
-    int status = ret->to_integer_type().data__();
+    int status = 0; // ret->to_integer_type().data__();
 
     delete prog;
 	return status;

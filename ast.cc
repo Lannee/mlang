@@ -1,5 +1,6 @@
 
 #include <ostream>
+#include <ranges>
 
 #include "ast.hh"
 
@@ -28,14 +29,14 @@ const type *context::get_variable(std::string_view name) {
     return nullptr;
 }
 
-inline void context::new_scope() { variables_.emplace_front(); functions_.emplace_front(); }
-inline void context::pop_scope() { variables_.pop_front()    ; functions_.pop_front()    ; }
+inline void context::new_scope() { variables_.emplace_front(); }
+inline void context::pop_scope() { variables_.pop_front()    ; }
 
 void context::print_state() const {
     for(auto scope : variables_) {
         std::cout << "scope" << std::endl;
         for (auto &[n, t] : scope) {
-            std::cout << "name: " << n << " value: " << (t ? t->repr() : "null") << std::endl;
+            std::cout << "name: " << n << " value: " << (t ? t : 0) << std::endl;
         }
     }
 }
@@ -46,8 +47,8 @@ void context::print_state() const {
 // }
 
 const type *print_function::value(context &ctx) const {
-    for(const auto &expr : *exprs_)
-        std::cout << expr->value(ctx)->repr(); 
+    // for(const auto &expr : *exprs_)
+    //     std::cout << expr->value(ctx)->repr(); 
     return &UNIT__;
 }
 
@@ -57,8 +58,31 @@ print_function::~print_function() {
 }
 
 const type *function_call::value(context &ctx) const {
-    std::cout << "function call" << std::endl;
-    return &UNIT__;
+
+    auto *var = ctx.get_variable(name_);
+
+    if(!var)
+        __error("usage of undefined symbol \"" + name_ + "\"");
+
+    if(ptrdiff_t num_args_diff = var->num_args() - args_->size() != 0)
+        __error("too " + 
+                std::string(num_args_diff > 0 ? "few" : "many") + 
+                " arguments to call on function \"" + name_ + "\"");
+
+    auto *names = var->args_names();
+
+    if (var->num_args() != 0) {
+
+        ctx.new_scope();
+        
+        for(size_t i = 0; i < var->num_args(); i++) {
+            ctx.set_local_variable((*names)[i], (*args_)[i]->value(ctx));
+        }
+
+        ctx.pop_scope();
+    }
+
+    return var->value(ctx);
 }
 
 function_call::~function_call() {
@@ -67,27 +91,29 @@ function_call::~function_call() {
 }
 
 const string_type *tostr_function::value(context &ctx) const {    
-    return new string_type(arg_->value(ctx)->repr());
+    // return new string_type(arg_->value(ctx)->repr());
+    return nullptr;
 }
 
 const integer_type *toint_function::value(context &ctx) const {  
-    auto *value = arg_->value(ctx);  
-    switch(value->kind()) {
-        case UNIT   : return new integer_type(0);
-        case INTEGER: return static_cast<const integer_type *>(value);
-        case STRING : {
-            try {
-                return new integer_type(std::stoi(value->repr()));
-            } catch(const std::exception& e) {
-                __error("cannot conver str to type int");
-            }
-        }
-        case STRUCT: __error("cannot conver struct to type int");
-    }
+    // auto *value = arg_->value(ctx);  
+    // switch(value->kind()) {
+    //     case UNIT   : return new integer_type(0);
+    //     case INTEGER: return static_cast<const integer_type *>(value);
+    //     case STRING : {
+    //         try {
+    //             return new integer_type(std::stoi(value->repr()));
+    //         } catch(const std::exception& e) {
+    //             __error("cannot conver str to type int");
+    //         }
+    //     }
+    //     case STRUCT: __error("cannot conver struct to type int");
+    // }
+    return nullptr;
 }
 
 const type *if_expression::value(context &ctx) const {
-    if (cond_->value(ctx)->to_integer_type().data__() > 0)
+    if (((const zero_arg_type *)cond_->value(ctx))->to_integer_type().data__() > 0)
         return then_->value(ctx);
     if (otherwise_) return otherwise_->value(ctx);
     return &UNIT__;
@@ -100,7 +126,7 @@ if_expression::~if_expression() {
 }
 
 void until_statement::execute(context &ctx) const {
-    while (cond_->value(ctx)->to_integer_type().data__() > 0)
+    while (((const zero_arg_type *)cond_->value(ctx))->to_integer_type().data__() > 0)
         body_->value(ctx);
 }
 
@@ -109,8 +135,16 @@ until_statement::~until_statement() {
     delete body_;
 }
 
-const type *var_decl::value(context &ctx) const { 
+const type *function_decl::value(context &ctx) const { 
+    std::cout << "value : " << expr_ << std::endl;
+
     auto *value = expr_->value(ctx);
+
+    std::cout << "value" << std::endl;
+
+    std::cout << value << std::endl;
+
+    ctx.print_state();
 
     if(ctx.get_variable(var_name_))
         __warning("redecaration of variable \"" + var_name_ + "\"");
@@ -119,7 +153,7 @@ const type *var_decl::value(context &ctx) const {
     return value;
 }
 
-var_decl::~var_decl() { delete expr_; }
+function_decl::~function_decl() { delete expr_; }
 
 const type *variable::value(context &ctx) const {
     auto *var = ctx.get_variable(name_);
@@ -147,8 +181,8 @@ const type *comp_expression::value(context &ctx) const {
     auto *l_value = l_->value(ctx);
     auto *r_value = r_->value(ctx);
 
-    if(l_value->kind() == UNIT || r_value->kind() == UNIT)
-        __error("cannot execute compare operation on unit type");
+    // if(l_value->kind() == UNIT || r_value->kind() == UNIT)
+    //     __error("cannot execute compare operation on unit type");
 
     // switch (l_value->kind()) {
     // case UNIT:

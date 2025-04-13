@@ -18,7 +18,7 @@ class integer_type;
 class context {
 public:
 
-    context() : variables_(0), functions_(0) {}
+    context() : variables_(0) {}
 
     void set_global_variable(std::string_view name, const type* value);
 
@@ -35,7 +35,6 @@ public:
 
 private:
     std::list<std::unordered_map<std::string, const type *>> variables_;
-    std::list<std::unordered_map<std::string, const type *>> functions_;
 };
 
 class expression {
@@ -54,14 +53,30 @@ enum type_kind {
 
 class type : public expression {
 public:
+    type(const std::vector<std::string> *args_decls, 
+         const expression *body)
+        : args_decls_(args_decls), body_(body) { std::cout << "args : " << args_decls->size() << std::endl; }
+        
+    size_t num_args() const { return args_decls_->size(); };
+    auto args_names() const { return args_decls_; }
+
+    const type *value(context &ctx) const override { return body_->value(ctx); }
+private:
+    const std::vector<std::string> *args_decls_;
+    const expression* body_;
+};
+
+class zero_arg_type : public type {
+public:
+    zero_arg_type() : type(new std::vector<std::string>(0), static_cast<const expression *>(this)) {}
+
     virtual type_kind kind() const = 0;
     virtual std::string repr() const = 0;
     virtual integer_type to_integer_type() const = 0;
-
-    const type *value(context &_) const { return this; }
+    const zero_arg_type *value(const context &_) const { std::cout << "zero" << std::endl; return this; }
 };
 
-class integer_type : public type {
+class integer_type : public zero_arg_type {
 public:
 
     integer_type(uint32_t data) : data_(data) {}
@@ -76,26 +91,11 @@ private:
     uint32_t data_;
 };
 
-class unit_type : public type {
+class unit_type : public zero_arg_type {
 public:
     type_kind kind() const { return type_kind::UNIT; };
-    const type *value(context &_) const { return this; }
     std::string repr() const { return "T"; } 
     integer_type to_integer_type() const override { return 0; } 
-} UNIT__{};
-
-class function_type : public type {
-public:
-    function_type(const expression* body) : body_(body) {}
-    
-    type_kind kind() const { return type_kind::FUNCTION; };
-    const type *value(context &_) const { return this; }
-    std::string repr() const { __error("function type cannot be represented"); } 
-    integer_type to_integer_type() const override { return 0; } 
-
-    const expression *body() const { return body_; }
-private:
-    const expression* body_;
 };
 
 const unit_type UNIT__{};
@@ -140,14 +140,12 @@ private:
     const expression *otherwise_;
 };
 
-class string_type : public type {
+class string_type : public zero_arg_type {
 public:
 
     string_type(std::string_view data) : data_(data) {}
 
     type_kind kind() const { return type_kind::STRING; };
-
-    const type *value(context &_) const { return this; }
 
     std::string repr() const { return data_; } 
     integer_type to_integer_type() const override { return data_ != ""; }  
@@ -167,20 +165,18 @@ private:
     const std::vector<const expression *> *exprs_;
 };
 
-class function_decl : public statement {
+class function_decl : public expression {
 public:
     function_decl(std::string_view name, 
-                  std::vector<const std::string> *args, 
                   const expression *expr)
-        : var_name_(name), args_(args), expr_(expr) { }
+        : var_name_(name), expr_(expr) { std::cout << "contructor " << name << std::endl;  }
 
-    void execute(context &ctx) const;
+    const type *value(context &ctx) const;
 
     ~function_decl();                                            
 
 private:
     const std::string var_name_;
-    const std::vector<const std::string> *args_;
     const expression *expr_;
 };
 
