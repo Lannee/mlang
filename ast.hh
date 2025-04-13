@@ -18,7 +18,7 @@ class integer_type;
 class context {
 public:
 
-    context() : variables_(0) {}
+    context() : variables_(0), functions_(0) {}
 
     void set_global_variable(std::string_view name, const type* value);
 
@@ -35,6 +35,7 @@ public:
 
 private:
     std::list<std::unordered_map<std::string, const type *>> variables_;
+    std::list<std::unordered_map<std::string, const type *>> functions_;
 };
 
 class expression {
@@ -47,6 +48,7 @@ enum type_kind {
     UNIT,
     INTEGER,
     STRING,
+    FUNCTION,
     STRUCT
 };
 
@@ -55,6 +57,8 @@ public:
     virtual type_kind kind() const = 0;
     virtual std::string repr() const = 0;
     virtual integer_type to_integer_type() const = 0;
+
+    const type *value(context &_) const { return this; }
 };
 
 class integer_type : public type {
@@ -64,23 +68,10 @@ public:
 
     type_kind kind() const { return type_kind::INTEGER; };
 
-    const type *value(context &_) const { return this; }
-
     std::string repr() const { return std::to_string(data_); }  
     integer_type to_integer_type() const override { return *this; }
 
     uint32_t data__() const { return data_; }
-
-    integer_type operator+ (integer_type const& obj) const { return data_ +  obj.data_; }
-    integer_type operator- (integer_type const& obj) const { return data_ -  obj.data_; }
-    integer_type operator* (integer_type const& obj) const { return data_ *  obj.data_; }
-    integer_type operator/ (integer_type const& obj) const { return data_ /  obj.data_; }
-    integer_type operator> (integer_type const& obj) const { return data_ >  obj.data_; }
-    integer_type operator< (integer_type const& obj) const { return data_ <  obj.data_; }
-    integer_type operator>=(integer_type const& obj) const { return data_ >= obj.data_; }
-    integer_type operator<=(integer_type const& obj) const { return data_ <= obj.data_; }
-    integer_type operator==(integer_type const& obj) const { return data_ == obj.data_; }
-    integer_type operator!=(integer_type const& obj) const { return data_ != obj.data_; }
 private:
     uint32_t data_;
 };
@@ -91,6 +82,20 @@ public:
     const type *value(context &_) const { return this; }
     std::string repr() const { return "T"; } 
     integer_type to_integer_type() const override { return 0; } 
+} UNIT__{};
+
+class function_type : public type {
+public:
+    function_type(const expression* body) : body_(body) {}
+    
+    type_kind kind() const { return type_kind::FUNCTION; };
+    const type *value(context &_) const { return this; }
+    std::string repr() const { __error("function type cannot be represented"); } 
+    integer_type to_integer_type() const override { return 0; } 
+
+    const expression *body() const { return body_; }
+private:
+    const expression* body_;
 };
 
 const unit_type UNIT__{};
@@ -162,16 +167,20 @@ private:
     const std::vector<const expression *> *exprs_;
 };
 
-class var_decl : public expression {
+class function_decl : public statement {
 public:
-    var_decl(std::string_view name, const expression *expr) : var_name_(name), expr_(expr) { }
+    function_decl(std::string_view name, 
+                  std::vector<const std::string> *args, 
+                  const expression *expr)
+        : var_name_(name), args_(args), expr_(expr) { }
 
-    const type *value(context &ctx) const;
+    void execute(context &ctx) const;
 
-    ~var_decl();                                            
+    ~function_decl();                                            
 
 private:
     const std::string var_name_;
+    const std::vector<const std::string> *args_;
     const expression *expr_;
 };
 

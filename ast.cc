@@ -28,8 +28,8 @@ const type *context::get_variable(std::string_view name) {
     return nullptr;
 }
 
-inline void context::new_scope() { variables_.emplace_front(); }
-inline void context::pop_scope() { variables_.pop_front();     }
+inline void context::new_scope() { variables_.emplace_front(); functions_.emplace_front(); }
+inline void context::pop_scope() { variables_.pop_front()    ; functions_.pop_front()    ; }
 
 void context::print_state() const {
     for(auto scope : variables_) {

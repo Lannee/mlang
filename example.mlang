@@ -1,4 +1,4 @@
-let a x, y = begin
+let a = x, y begin
     123
 end
 

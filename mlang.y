@@ -23,6 +23,7 @@ mlang::expr_list *prog;
 	uint8_t int_val;
 	char *str_val;
     std::vector<const mlang::expression *> *expr_list_t;
+    std::vector<const std::string> *ident_list_t;
     const mlang::expression *expr_t;
     const mlang::statement *stmt_t;
     const mlang::type *value_t;
@@ -45,6 +46,7 @@ mlang::expr_list *prog;
 // non-terminal symbols
 %type <stmt_t> stmt
 %type <expr_list_t> exprs args
+%type <ident_list_t> args_decl
 %type <expr_t> expr function_call
 %type <value_t> value
 
@@ -63,13 +65,12 @@ exprs
 
 expr
     : value                           { $$ = $1; }
-    | function_call 
     | IDENT                           { $$ = new mlang::variable($1); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET IDENT ASSIGNMENT expr       { $$ = new mlang::var_decl($2, $4); free($2); }
-    | LET IDENT args ASSIGNMENT expr  { $$ = new mlang::var_decl($2, $5); free($2); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
-    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }                  
+    | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }
+    | function_call                   
     | stmt                            { $$ = $1; }
 ;
 
@@ -81,7 +82,12 @@ function_call
 ;
 
 stmt
-    : UNTIL expr expr                 { $$ = new mlang::until_statement($2, $3); }
+    : UNTIL expr expr                        { $$ = new mlang::until_statement($2, $3); }
+;
+
+args_decl
+    : IDENT                            { $$ = new std::vector<const std::string>(1, $1); }
+    | args_decl COMMA IDENT            { $1->push_back($3); }
 ;
 
 args
@@ -93,6 +99,7 @@ value
     : INT                     { $$ = new mlang::integer_type($1); }
     | STRING                  { $$ = new mlang::string_type($1); free($1); }
     | UNIT                    { $$ = &mlang::UNIT__; }
+    | args_decl expr          { $$ = new mlang::function_type($2, $5); }
 ;
 
 // builtin_binop
