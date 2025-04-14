@@ -11,6 +11,12 @@
 
 namespace mlang {
 
+static inline void __error(std::string_view message) 
+    { std::cerr << "Error: " << message << std::endl; exit(1); }
+
+static inline void __warning(std::string_view message) 
+    { std::cerr << "Warning: " << message << std::endl; } 
+
 class type;
 class unit_type;
 class integer_type;
@@ -52,31 +58,18 @@ enum type_kind {
 };
 
 class type : public expression {
-public:
-    type(const std::vector<std::string> *args_decls, 
-         const expression *body)
-        : args_decls_(args_decls), body_(body) { std::cout << "args : " << args_decls->size() << std::endl; }
-        
-    size_t num_args() const { return args_decls_->size(); };
-    auto args_names() const { return args_decls_; }
+public:   
+    virtual const type *call(context &ctx) const = 0;
 
-    const type *value(context &ctx) const override { return body_->value(ctx); }
-private:
-    const std::vector<std::string> *args_decls_;
-    const expression* body_;
-};
-
-class zero_arg_type : public type {
-public:
-    zero_arg_type() : type(new std::vector<std::string>(0), static_cast<const expression *>(this)) {}
+    virtual size_t num_args() const = 0;
+    virtual const std::vector<std::string> *args_names() const = 0;
 
     virtual type_kind kind() const = 0;
     virtual std::string repr() const = 0;
     virtual integer_type to_integer_type() const = 0;
-    const zero_arg_type *value(const context &_) const { std::cout << "zero" << std::endl; return this; }
 };
 
-class integer_type : public zero_arg_type {
+class integer_type : public type {
 public:
 
     integer_type(uint32_t data) : data_(data) {}
@@ -86,16 +79,49 @@ public:
     std::string repr() const { return std::to_string(data_); }  
     integer_type to_integer_type() const override { return *this; }
 
+    size_t num_args() const override { return 0; }
+    virtual const std::vector<std::string> *args_names() const { return nullptr; }
+
+    const type *value(context &_) const override { return this; }
+    const type *call(context &_) const override { return this; }
+
     uint32_t data__() const { return data_; }
 private:
     uint32_t data_;
 };
 
-class unit_type : public zero_arg_type {
+class function_type : public type {
+public:
+    function_type(const std::vector<std::string> *args_decls, 
+                    const expression *body)
+        : args_decls_(args_decls), body_(body) {}
+        
+    size_t num_args() const { return args_decls_->size(); };
+    const std::vector<std::string> *args_names() const override { return args_decls_; }
+
+    const type *value(context &ctx) const override { return this; }
+    const type *call(context &ctx) const override { return body_->value(ctx); }
+
+    type_kind kind() const { return type_kind::FUNCTION; };
+    std::string repr() const { __error("function type cannot be represented"); return ""; } 
+    integer_type to_integer_type() const override { return 0; } 
+
+private:
+    const std::vector<std::string> *args_decls_;
+    const expression* body_;
+};
+
+class unit_type : public type {
 public:
     type_kind kind() const { return type_kind::UNIT; };
     std::string repr() const { return "T"; } 
     integer_type to_integer_type() const override { return 0; } 
+
+    size_t num_args() const override { return 0; }
+    virtual const std::vector<std::string> *args_names() const { return nullptr; }
+
+    const type *value(context &_) const override { return this; }
+    const type *call(context &_) const override { return this; }
 };
 
 const unit_type UNIT__{};
@@ -140,7 +166,7 @@ private:
     const expression *otherwise_;
 };
 
-class string_type : public zero_arg_type {
+class string_type : public type {
 public:
 
     string_type(std::string_view data) : data_(data) {}
@@ -151,6 +177,12 @@ public:
     integer_type to_integer_type() const override { return data_ != ""; }  
 
     string_type operator+(string_type const& obj) { return string_type(data_ + obj.data_); }
+
+    size_t num_args() const override { return 0; }
+    virtual const std::vector<std::string> *args_names() const { return nullptr; }
+
+    const type *value(context &_) const override { return this; }
+    const type *call(context &_) const override { return this; }
 private:
     std::string data_;
 };
@@ -169,7 +201,7 @@ class function_decl : public expression {
 public:
     function_decl(std::string_view name, 
                   const expression *expr)
-        : var_name_(name), expr_(expr) { std::cout << "contructor " << name << std::endl;  }
+        : var_name_(name), expr_(expr) {}
 
     const type *value(context &ctx) const;
 

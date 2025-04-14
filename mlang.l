@@ -26,7 +26,7 @@ DIGIT    [0-9]
 					return STRING;
 				}
 \<- 			{ return LARROW; }
-:	 			{ return SEMICOL; }
+\|	 			{ return SEMICOL; }
 print           { return PRINT; }
 toint           { return TOINT; }
 tostr           { return TOSTR; }

@@ -66,7 +66,7 @@ exprs
 expr
     : value                           { $$ = $1; }
     | function_call
-    | IDENT                           { $$ = new mlang::function_call($1, nullptr); free($1); }
+    | IDENT                           { $$ = new mlang::function_call($1, new std::vector<const mlang::expression *>(0)); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET IDENT ASSIGNMENT expr       { $$ = new mlang::function_decl($2, $4); free($2); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
@@ -99,7 +99,7 @@ value
     : INT                             { $$ = new mlang::integer_type($1); }
     | STRING                          { $$ = new mlang::string_type($1); free($1); }
     | UNIT                            { $$ = &mlang::UNIT__; }
-    | args_decl SEMICOL expr          { $$ = new mlang::type($1, $3); }
+    | SEMICOL args_decl SEMICOL expr          { $$ = new mlang::function_type($2, $4); }
 ;
 
 // builtin_binop
@@ -120,7 +120,7 @@ int main(int argc, char **argv){
 
     auto *ret = prog->value(ctx);
 
-    int status = 0; // ret->to_integer_type().data__();
+    int status = ret->to_integer_type().data__();
 
     delete prog;
 	return status;

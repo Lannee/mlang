@@ -6,12 +6,6 @@
 
 namespace mlang {
 
-static inline void __error(std::string_view message) 
-    { std::cerr << "Error: " << message << std::endl; exit(1); }
-
-static inline void __warning(std::string_view message) 
-    { std::cerr << "Warning: " << message << std::endl; } 
-
 void context::set_global_variable(std::string_view name, const type* value) {
     variables_.back()[std::string(name)] = value;
 }
@@ -36,7 +30,7 @@ void context::print_state() const {
     for(auto scope : variables_) {
         std::cout << "scope" << std::endl;
         for (auto &[n, t] : scope) {
-            std::cout << "name: " << n << " value: " << (t ? t : 0) << std::endl;
+            std::cout << "name: " << n << " value: " << (t ? t->repr() : "null") << std::endl;
         }
     }
 }
@@ -47,8 +41,8 @@ void context::print_state() const {
 // }
 
 const type *print_function::value(context &ctx) const {
-    // for(const auto &expr : *exprs_)
-    //     std::cout << expr->value(ctx)->repr(); 
+    for(const auto &expr : *exprs_)
+        std::cout << expr->value(ctx)->repr(); 
     return &UNIT__;
 }
 
@@ -58,31 +52,33 @@ print_function::~print_function() {
 }
 
 const type *function_call::value(context &ctx) const {
-
     auto *var = ctx.get_variable(name_);
 
     if(!var)
         __error("usage of undefined symbol \"" + name_ + "\"");
 
-    if(ptrdiff_t num_args_diff = var->num_args() - args_->size() != 0)
+    if(ptrdiff_t num_args_diff = (var->num_args() - args_->size()) != 0)
         __error("too " + 
-                std::string(num_args_diff > 0 ? "few" : "many") + 
+                std::string(num_args_diff < 0 ? "few" : "many") + 
                 " arguments to call on function \"" + name_ + "\"");
 
-    auto *names = var->args_names();
-
     if (var->num_args() != 0) {
+        auto *names = var->args_names();
 
         ctx.new_scope();
         
-        for(size_t i = 0; i < var->num_args(); i++) {
+        for(size_t i = 0; i < var->num_args(); i++)
             ctx.set_local_variable((*names)[i], (*args_)[i]->value(ctx));
-        }
 
+        auto *ret = var->call(ctx);
         ctx.pop_scope();
+
+        return ret;
     }
 
-    return var->value(ctx);
+    auto *ret = var->call(ctx);
+
+    return ret;
 }
 
 function_call::~function_call() {
@@ -113,7 +109,7 @@ const integer_type *toint_function::value(context &ctx) const {
 }
 
 const type *if_expression::value(context &ctx) const {
-    if (((const zero_arg_type *)cond_->value(ctx))->to_integer_type().data__() > 0)
+    if ((cond_->value(ctx))->to_integer_type().data__() > 0)
         return then_->value(ctx);
     if (otherwise_) return otherwise_->value(ctx);
     return &UNIT__;
@@ -126,7 +122,7 @@ if_expression::~if_expression() {
 }
 
 void until_statement::execute(context &ctx) const {
-    while (((const zero_arg_type *)cond_->value(ctx))->to_integer_type().data__() > 0)
+    while ((cond_->value(ctx))->to_integer_type().data__() > 0)
         body_->value(ctx);
 }
 
@@ -136,15 +132,8 @@ until_statement::~until_statement() {
 }
 
 const type *function_decl::value(context &ctx) const { 
-    std::cout << "value : " << expr_ << std::endl;
 
     auto *value = expr_->value(ctx);
-
-    std::cout << "value" << std::endl;
-
-    std::cout << value << std::endl;
-
-    ctx.print_state();
 
     if(ctx.get_variable(var_name_))
         __warning("redecaration of variable \"" + var_name_ + "\"");
