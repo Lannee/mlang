@@ -186,15 +186,6 @@ private:
     const expression *expr_;
 };
 
-class variable : public expression {
-public:
-    variable(std::string_view name) : name_(name) {}
-    const expression *value(context &ctx) const;
-
-private:
-    const std::string name_;
-};
-
 
 enum comp_kind {
     EQUAL,

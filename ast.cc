@@ -126,14 +126,6 @@ const expression *function_decl::value(context &ctx) const {
 
 function_decl::~function_decl() { delete expr_; }
 
-const expression *variable::value(context &ctx) const {
-    auto *var = ctx.get_variable(name_);
-    if(!var)
-        __error("usage of undefined symbol \"" + name_ + "\"");
-
-    return var->value(ctx);
-}
-
 
 const expression *expr_list::value(context &ctx) const {
     // Creating local scope
