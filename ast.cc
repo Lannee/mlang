@@ -44,9 +44,9 @@ const expression *function_call::value(context &ctx) const {
     if(!var)
         __error("usage of undefined symbol \"" + name_ + "\"");
 
-    if(ptrdiff_t num_args_diff = (var->num_args() - args_->size()) != 0)
+    if(ptrdiff_t num_args_diff = var->num_args() - args_->size())
         __error("too " + 
-                std::string(num_args_diff < 0 ? "few" : "many") + 
+                std::string(num_args_diff > 0 ? "few" : "many") + 
                 " arguments to call on function \"" + name_ + "\"");
 
     if (var->num_args() != 0) {

@@ -44,7 +44,7 @@ private:
 
 class expression {
 public:
-    expression() : args_names_(0) {}
+    expression() : args_names_(new std::vector<std::string>(0)) {}
 
     virtual const expression *value(context &ctx) const = 0;
 
