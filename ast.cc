@@ -6,15 +6,11 @@
 
 namespace mlang {
 
-void context::set_global_variable(std::string_view name, const type* value) {
-    variables_.back()[std::string(name)] = value;
-}
-
-void context::set_local_variable(std::string_view name, const type* value) {
+void context::set_local_variable(std::string_view name, const expression* value) {
     variables_.front()[std::string(name)] = value;
 }
 
-const type *context::get_variable(std::string_view name) {
+const expression *context::get_variable(std::string_view name) {
     auto _name = std::string(name);
     for (auto scope : variables_) {
         if(scope.count(std::string(_name))) return scope[_name];
@@ -26,23 +22,14 @@ const type *context::get_variable(std::string_view name) {
 inline void context::new_scope() { variables_.emplace_front(); }
 inline void context::pop_scope() { variables_.pop_front()    ; }
 
-void context::print_state() const {
-    for(auto scope : variables_) {
-        std::cout << "scope" << std::endl;
-        for (auto &[n, t] : scope) {
-            std::cout << "name: " << n << " value: " << (t ? t->repr() : "null") << std::endl;
-        }
-    }
-}
-
 // context::~context() {
 //     for(auto &m : variables_)
 //         for(auto [_, t] : m) delete t;
 // }
 
-const type *print_function::value(context &ctx) const {
+const expression *print_function::value(context &ctx) const {
     for(const auto &expr : *exprs_)
-        std::cout << expr->value(ctx)->repr(); 
+        std::cout << expr->value(ctx)->as_type()->repr(); 
     return &UNIT__;
 }
 
@@ -51,7 +38,7 @@ print_function::~print_function() {
     delete exprs_;
 }
 
-const type *function_call::value(context &ctx) const {
+const expression *function_call::value(context &ctx) const {
     auto *var = ctx.get_variable(name_);
 
     if(!var)
@@ -63,22 +50,20 @@ const type *function_call::value(context &ctx) const {
                 " arguments to call on function \"" + name_ + "\"");
 
     if (var->num_args() != 0) {
-        auto *names = var->args_names();
+        auto names = var->args_names();
 
         ctx.new_scope();
         
         for(size_t i = 0; i < var->num_args(); i++)
             ctx.set_local_variable((*names)[i], (*args_)[i]->value(ctx));
 
-        auto *ret = var->call(ctx);
+        auto *ret = var->value(ctx);
         ctx.pop_scope();
 
         return ret;
     }
 
-    auto *ret = var->call(ctx);
-
-    return ret;
+    return var->value(ctx);;
 }
 
 function_call::~function_call() {
@@ -108,8 +93,8 @@ const integer_type *toint_function::value(context &ctx) const {
     return nullptr;
 }
 
-const type *if_expression::value(context &ctx) const {
-    if ((cond_->value(ctx))->to_integer_type().data__() > 0)
+const expression *if_expression::value(context &ctx) const {
+    if ((cond_->value(ctx))->as_type()->to_integer_type().data__() > 0)
         return then_->value(ctx);
     if (otherwise_) return otherwise_->value(ctx);
     return &UNIT__;
@@ -122,7 +107,7 @@ if_expression::~if_expression() {
 }
 
 void until_statement::execute(context &ctx) const {
-    while ((cond_->value(ctx))->to_integer_type().data__() > 0)
+    while ((cond_->value(ctx))->as_type()->to_integer_type().data__() > 0)
         body_->value(ctx);
 }
 
@@ -131,20 +116,17 @@ until_statement::~until_statement() {
     delete body_;
 }
 
-const type *function_decl::value(context &ctx) const { 
+const expression *function_decl::value(context &ctx) const { 
+    // if(ctx.get_variable(var_name_))
+    //     __warning("redeclaration of variable \"" + var_name_ + "\"");
 
-    auto *value = expr_->value(ctx);
-
-    if(ctx.get_variable(var_name_))
-        __warning("redecaration of variable \"" + var_name_ + "\"");
-
-    ctx.set_local_variable(var_name_, value);
-    return value;
+    ctx.set_local_variable(var_name_, expr_);
+    return expr_;
 }
 
 function_decl::~function_decl() { delete expr_; }
 
-const type *variable::value(context &ctx) const {
+const expression *variable::value(context &ctx) const {
     auto *var = ctx.get_variable(name_);
     if(!var)
         __error("usage of undefined symbol \"" + name_ + "\"");
@@ -153,11 +135,11 @@ const type *variable::value(context &ctx) const {
 }
 
 
-const type *expr_list::value(context &ctx) const {
+const expression *expr_list::value(context &ctx) const {
     // Creating local scope
     ctx.new_scope();
 
-    const type *last_expr_value = &UNIT__;
+    const expression *last_expr_value = &UNIT__;
     for(auto e : *exprs_)
         last_expr_value = e->value(ctx);
     
@@ -166,7 +148,7 @@ const type *expr_list::value(context &ctx) const {
     return last_expr_value; 
 }
 
-const type *comp_expression::value(context &ctx) const { 
+const expression *comp_expression::value(context &ctx) const { 
     auto *l_value = l_->value(ctx);
     auto *r_value = r_->value(ctx);
 

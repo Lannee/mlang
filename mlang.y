@@ -22,11 +22,11 @@ mlang::expr_list *prog;
 %union {
 	uint8_t int_val;
 	char *str_val;
-    std::vector<const mlang::expression *> *expr_list_t;
+    std::vector<mlang::expression *> *expr_list_t;
     std::vector<std::string> *ident_list_t;
-    const mlang::expression *expr_t;
-    const mlang::statement *stmt_t;
-    const mlang::type *value_t;
+    mlang::expression *expr_t;
+    mlang::statement *stmt_t;
+    mlang::type *value_t;
     mlang::comp_kind comp_t;
 }
 
@@ -59,19 +59,20 @@ program
 ;
 
 exprs
-    : /* empty */                     { $$ = new std::vector<const mlang::expression *>(0); }
+    : /* empty */                     { $$ = new std::vector<mlang::expression *>(0); }
 	| exprs expr                      { $1->push_back($2); }
 ;
 
 expr
     : value                           { $$ = $1; }
     | function_call
-    | IDENT                           { $$ = new mlang::function_call($1, new std::vector<const mlang::expression *>(0)); free($1); }
+    | IDENT                           { $$ = new mlang::function_call($1, new std::vector<mlang::expression *>(0)); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET IDENT ASSIGNMENT expr       { $$ = new mlang::function_decl($2, $4); free($2); }
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
     | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }                   
     | stmt                            { $$ = $1; }
+    | SEMICOL args_decl SEMICOL expr  { $4->set_args_names($2); $$ = $4; }
 ;
 
 function_call
@@ -91,15 +92,14 @@ args_decl
 ;
 
 args
-    : expr                            { $$ = new std::vector<const mlang::expression *>(1, $1); }
+    : expr                            { $$ = new std::vector<mlang::expression *>(1, $1); }
     | args COMMA expr                 { $1->push_back($3); }
 ;
 
 value
     : INT                             { $$ = new mlang::integer_type($1); }
     | STRING                          { $$ = new mlang::string_type($1); free($1); }
-    | UNIT                            { $$ = &mlang::UNIT__; }
-    | SEMICOL args_decl SEMICOL expr          { $$ = new mlang::function_type($2, $4); }
+    | UNIT                            { $$ = (mlang::type *)&mlang::UNIT__; }
 ;
 
 // builtin_binop
@@ -120,7 +120,7 @@ int main(int argc, char **argv){
 
     auto *ret = prog->value(ctx);
 
-    int status = ret->to_integer_type().data__();
+    int status = ret->as_type()->to_integer_type().data__();
 
     delete prog;
 	return status;

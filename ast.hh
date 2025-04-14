@@ -20,17 +20,16 @@ static inline void __warning(std::string_view message)
 class type;
 class unit_type;
 class integer_type;
+class expression;
 
 class context {
 public:
 
     context() : variables_(0) {}
 
-    void set_global_variable(std::string_view name, const type* value);
+    void set_local_variable(std::string_view name, const expression* value);
 
-    void set_local_variable(std::string_view name, const type* value);
-
-    const type *get_variable(std::string_view name);
+    const expression *get_variable(std::string_view name);
 
     inline void new_scope();
     inline void pop_scope();
@@ -40,13 +39,24 @@ public:
     // ~context();
 
 private:
-    std::list<std::unordered_map<std::string, const type *>> variables_;
+    std::list<std::unordered_map<std::string, const expression *>> variables_;
 };
 
 class expression {
 public:
-    virtual const type *value(context &ctx) const = 0;
+    expression() : args_names_(0) {}
+
+    virtual const expression *value(context &ctx) const = 0;
+
+    const type *as_type() const { return (const type *)this; }
+
+    void set_args_names(std::vector<std::string> *names) { args_names_ = names; }
+    
+    std::size_t num_args() const { return args_names_->size(); }
+    std::vector<std::string> *args_names() const { return args_names_; }
     virtual ~expression() {}
+private:
+    std::vector<std::string> *args_names_;
 };
 
 enum type_kind {
@@ -59,11 +69,6 @@ enum type_kind {
 
 class type : public expression {
 public:   
-    virtual const type *call(context &ctx) const = 0;
-
-    virtual size_t num_args() const = 0;
-    virtual const std::vector<std::string> *args_names() const = 0;
-
     virtual type_kind kind() const = 0;
     virtual std::string repr() const = 0;
     virtual integer_type to_integer_type() const = 0;
@@ -79,36 +84,11 @@ public:
     std::string repr() const { return std::to_string(data_); }  
     integer_type to_integer_type() const override { return *this; }
 
-    size_t num_args() const override { return 0; }
-    virtual const std::vector<std::string> *args_names() const { return nullptr; }
-
-    const type *value(context &_) const override { return this; }
-    const type *call(context &_) const override { return this; }
+    const expression *value(context &_) const override { return this; }
 
     uint32_t data__() const { return data_; }
 private:
     uint32_t data_;
-};
-
-class function_type : public type {
-public:
-    function_type(const std::vector<std::string> *args_decls, 
-                    const expression *body)
-        : args_decls_(args_decls), body_(body) {}
-        
-    size_t num_args() const { return args_decls_->size(); };
-    const std::vector<std::string> *args_names() const override { return args_decls_; }
-
-    const type *value(context &ctx) const override { return this; }
-    const type *call(context &ctx) const override { return body_->value(ctx); }
-
-    type_kind kind() const { return type_kind::FUNCTION; };
-    std::string repr() const { __error("function type cannot be represented"); return ""; } 
-    integer_type to_integer_type() const override { return 0; } 
-
-private:
-    const std::vector<std::string> *args_decls_;
-    const expression* body_;
 };
 
 class unit_type : public type {
@@ -117,29 +97,27 @@ public:
     std::string repr() const { return "T"; } 
     integer_type to_integer_type() const override { return 0; } 
 
-    size_t num_args() const override { return 0; }
-    virtual const std::vector<std::string> *args_names() const { return nullptr; }
-
-    const type *value(context &_) const override { return this; }
-    const type *call(context &_) const override { return this; }
+    const expression *value(context &_) const override { return this; }
 };
 
 const unit_type UNIT__{};
 
 class statement : public expression {
 public:
-    const type *value(context &ctx) const { execute(ctx); return &UNIT__; }
+    statement() : expression() {}
+
+    const expression *value(context &ctx) const { execute(ctx); return &UNIT__; }
     virtual void execute(context &ctx) const = 0;
 };
 
 class print_function : public expression {
 public:
-    print_function(const std::vector<const expression *> *exprs) : exprs_(exprs) {}
-    const type *value(context &ctx) const;
+    print_function(const std::vector<expression *> *exprs) : exprs_(exprs) {}
+    const expression *value(context &ctx) const;
     ~print_function();
 
 private:
-    const std::vector<const expression *> *exprs_;
+    const std::vector<expression *> *exprs_;
 };
 
 class until_statement : public statement {
@@ -157,7 +135,7 @@ private:
 class if_expression : public expression {
 public:
     if_expression(const expression *cond, const expression *then, const expression *otherwise) : cond_(cond), then_(then), otherwise_(otherwise) {}
-    const type *value(context &ctx) const;
+    const expression *value(context &ctx) const;
     ~if_expression();
 
 private:
@@ -178,23 +156,19 @@ public:
 
     string_type operator+(string_type const& obj) { return string_type(data_ + obj.data_); }
 
-    size_t num_args() const override { return 0; }
-    virtual const std::vector<std::string> *args_names() const { return nullptr; }
-
-    const type *value(context &_) const override { return this; }
-    const type *call(context &_) const override { return this; }
+    const expression *value(context &_) const override { return this; }
 private:
     std::string data_;
 };
 
 class expr_list : public expression {
 public:
-    expr_list(std::vector<const expression *> *exprs) : exprs_(exprs) {}
+    expr_list(std::vector<expression *> *exprs) : exprs_(exprs) {}
 
-    const type *value(context &ctx) const;
+    const expression *value(context &ctx) const;
 
 private:
-    const std::vector<const expression *> *exprs_;
+    const std::vector<expression *> *exprs_;
 };
 
 class function_decl : public expression {
@@ -203,7 +177,7 @@ public:
                   const expression *expr)
         : var_name_(name), expr_(expr) {}
 
-    const type *value(context &ctx) const;
+    const expression *value(context &ctx) const;
 
     ~function_decl();                                            
 
@@ -215,7 +189,7 @@ private:
 class variable : public expression {
 public:
     variable(std::string_view name) : name_(name) {}
-    const type *value(context &ctx) const;
+    const expression *value(context &ctx) const;
 
 private:
     const std::string name_;
@@ -234,7 +208,7 @@ enum comp_kind {
 class comp_expression : public expression {
 public:
     comp_expression(const expression *l, comp_kind op, const expression *r) : l_(l), op_(op), r_(r) {}
-    const type *value(context &ctx) const;
+    const expression *value(context &ctx) const;
 private:
     const expression *r_;
     comp_kind op_;
@@ -243,13 +217,13 @@ private:
 
 class function_call : public expression {
 public:
-    function_call(std::string_view name, const std::vector<const expression *> *args) : name_(name), args_(args) {}
-    const type *value(context &ctx) const;
+    function_call(std::string_view name, const std::vector<expression *> *args) : name_(name), args_(args) {}
+    const expression *value(context &ctx) const;
     ~function_call();
 
 private:
     const std::string name_; 
-    const std::vector<const expression *> *args_;
+    const std::vector<expression *> *args_;
 };
 
 
