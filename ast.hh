@@ -209,11 +209,13 @@ private:
 class function_call : public expression {
 public:
     function_call(std::string_view name, const std::vector<expression *> *args) : name_(name), args_(args) {}
+    function_call(const expression *expr, const std::vector<expression *> *args) : name_(std::nullopt), expr_(expr), args_(args) {}
     const expression *value(context &ctx) const;
     ~function_call();
 
 private:
-    const std::string name_; 
+    const std::optional<std::string> name_; 
+    const expression *expr_;
     const std::vector<expression *> *args_;
 };
 

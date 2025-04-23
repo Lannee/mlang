@@ -1,4 +1,1 @@
-let a = 3
-let b = |x, y| a
-
-print <- b <- "fgdfgdv", 4
+|x| x <- 3

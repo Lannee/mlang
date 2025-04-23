@@ -12,9 +12,8 @@ void context::set_local_variable(std::string_view name, const expression* value)
 
 const expression *context::get_variable(std::string_view name) {
     auto _name = std::string(name);
-    for (auto scope : variables_) {
-        if(scope.count(std::string(_name))) return scope[_name];
-    }
+    for (auto scope : variables_)
+        if(scope.count(_name)) return scope[_name];
 
     return nullptr;
 }
@@ -39,15 +38,24 @@ print_function::~print_function() {
 }
 
 const expression *function_call::value(context &ctx) const {
-    auto *var = ctx.get_variable(name_);
+    std::cout << "f call" << std::endl;
+    auto *var = name_ ? ctx.get_variable(*name_) : expr_;
+
+    std::cout << "var : " << var << "var->args_names : " << var->args_names() << std::endl;
+
+    for (const auto &e : *var->args_names())
+        std::cout << "arg : \"" << e << "\"\n";
 
     if(!var)
-        __error("usage of undefined symbol \"" + name_ + "\"");
+        __error("usage of undefined symbol \"" + *name_ + "\"");
 
     if(ptrdiff_t num_args_diff = var->num_args() - args_->size())
         __error("too " + 
                 std::string(num_args_diff > 0 ? "few" : "many") + 
-                " arguments to call on function \"" + name_ + "\"");
+                " arguments to call on " +
+                std::string(name_ 
+                                ? "function \"" + *name_ + "\""
+                                : "anonymouse function"));
 
     if (var->num_args() != 0) {
         auto names = var->args_names();

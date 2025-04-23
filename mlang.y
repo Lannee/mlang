@@ -72,7 +72,7 @@ expr
     | IF expr expr ELSE expr          { $$ = new mlang::if_expression($2, $3, $5); }
     | IF expr expr                    { $$ = new mlang::if_expression($2, $3, nullptr); }                   
     | stmt                            { $$ = $1; }
-    | SEMICOL args_decl SEMICOL expr  { $4->set_args_names($2); $$ = $4; }
+    | SEMICOL args_decl SEMICOL expr  { $4->set_args_names($2); $$ = $4; std::cout << "expr : " << $4 << " args : " << $2 << std::endl; }
 ;
 
 function_call
@@ -80,6 +80,7 @@ function_call
     | TOSTR LARROW expr                      { $$ = new mlang::tostr_function($3); }
     | TOINT LARROW expr                      { $$ = new mlang::toint_function($3); }
     | IDENT LARROW args                      { $$ = new mlang::function_call($1, $3); free($1); }
+    | expr  LARROW args                      { $$ = new mlang::function_call($1, $3); free($1); }
 ;
 
 stmt
