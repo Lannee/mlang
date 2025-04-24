@@ -5,12 +5,6 @@
 
 namespace mlang {
 
-static inline void __error(std::string_view message) 
-    { std::cerr << "Error: " << message << std::endl; exit(1); }
-
-static inline void __warning(std::string_view message) 
-    { std::cerr << "Warning: " << message << std::endl; } 
-
 void context::set_global_variable(std::string_view name, const type* value) {
     variables_.back()[std::string(name)] = value;
 }
@@ -19,10 +13,17 @@ void context::set_local_variable(std::string_view name, const type* value) {
     variables_.front()[std::string(name)] = value;
 }
 
+void context::assign_to_variable(std::string_view name, const type* value) {
+    auto _name = std::string(name);
+    for (auto &scope : variables_) {
+        if(scope.count(_name)) scope[_name] = value;
+    }
+}
+
 const type *context::get_variable(std::string_view name) {
     auto _name = std::string(name);
-    for (auto scope : variables_) {
-        if(scope.count(std::string(_name))) return scope[_name];
+    for (auto &scope : variables_) {
+        if(scope.count(_name)) return scope[_name];
     }
 
     return nullptr;
@@ -44,6 +45,26 @@ void context::print_state() const {
 //     for(auto &m : variables_)
 //         for(auto [_, t] : m) delete t;
 // }
+
+std::string type_kind_to_string(type_kind kind) {
+    switch (kind) {
+        case UNIT    : return "unit";
+        case INTEGER : return "integer";
+        case STRING  : return "string";
+        default      : return "undefined";
+    }
+}
+
+std::string builtin_binop_kind_to_string(builtin_binop_kind kind) {
+    switch(kind) {
+        case builtin_binop_kind::EQUAL : return "equal";
+        case builtin_binop_kind::NOTEQUAL : return "not equal";
+        case builtin_binop_kind::GREATER : return "greater";
+        case builtin_binop_kind::GREATEREQUAL : return "reater or equal";
+        case builtin_binop_kind::LESS : return "less";
+        case builtin_binop_kind::LESSEQUAL : return "less or equal";
+    }
+}
 
 const type *print_function::value(context &ctx) const {
     for(const auto &expr : *exprs_)
@@ -82,7 +103,7 @@ const integer_type *toint_function::value(context &ctx) const {
                 __error("cannot conver str to type int");
             }
         }
-        case STRUCT: __error("cannot conver struct to type int");
+        default: __error("unsupported convertion to type int");
     }
 }
 
@@ -113,13 +134,26 @@ const type *var_decl::value(context &ctx) const {
     auto *value = expr_->value(ctx);
 
     if(ctx.get_variable(var_name_))
-        __warning("redecaration of variable \"" + var_name_ + "\"");
+        __warning("redeclaration of variable \"" + var_name_ + "\"");
 
     ctx.set_local_variable(var_name_, value);
     return value;
 }
 
 var_decl::~var_decl() { delete expr_; }
+
+const type *essignment_expression::value(context &ctx) const { 
+    auto *value = expr_->value(ctx);
+
+    auto var = ctx.get_variable(var_name_);
+    if(!var)
+        __error("undefined symbol \"" + var_name_ + "\"");
+
+    ctx.assign_to_variable(var_name_, value);
+    return value;
+}
+
+essignment_expression::~essignment_expression() { delete expr_; }
 
 const type *variable::value(context &ctx) const {
     auto *var = ctx.get_variable(name_);
@@ -143,35 +177,32 @@ const type *expr_list::value(context &ctx) const {
     return last_expr_value; 
 }
 
-const type *comp_expression::value(context &ctx) const { 
-    auto *l_value = l_->value(ctx);
-    auto *r_value = r_->value(ctx);
+const type *builtin_binop_function::value(context &ctx) const { 
+    auto *fst_value = fst_->value(ctx);
+    auto *snd_value = snd_->value(ctx);
 
-    if(l_value->kind() == UNIT || r_value->kind() == UNIT)
-        __error("cannot execute compare operation on unit type");
+    auto kind = fst_value->kind();
 
-    // switch (l_value->kind()) {
-    // case UNIT:
-    //     return &UNIT__;
-    
-    // default:
-    //     break;
-    // }
+    if(kind != snd_value->kind())
+        __error("Cannot performe " + builtin_binop_kind_to_string(op_) +
+                " operation on type " + type_kind_to_string(kind) +
+                " and type " + type_kind_to_string(snd_value->kind()));
 
-    // switch(op_) {
-    //     case comp_kind::EQUAL:
-    //         return l_value < r_value;
-    //     case comp_kind::NOTEQUAL: 
-    //         return l_value < r_value;
-    //     case comp_kind::GREATER: 
-    //         return l_value < r_value;
-    //     case comp_kind::GREATEREQUAL: 
-    //         return l_value < r_value;
-    //     case comp_kind::LESS: 
-    //         return l_value < r_value;
-    //     case comp_kind::LESSEQUAL: 
-    //         return l_value < r_value;    
-    // }
+    if(kind == UNIT || fst_value->kind() == UNIT)
+        __error("Cannot performe " + builtin_binop_kind_to_string(op_) + " operation on unit type");
+
+    switch (op_) {
+        case NOTEQUAL     : return *fst_value != *snd_value;
+        case EQUAL        : return *fst_value == *snd_value;
+        case GREATER      : return *fst_value > *snd_value;
+        case GREATEREQUAL : return *fst_value >= *snd_value;
+        case LESS         : return *fst_value < *snd_value;
+        case LESSEQUAL    : return *fst_value <= *snd_value;
+        case PLUS         : return *fst_value + *snd_value;
+        case MINUS        : return *fst_value - *snd_value;
+        case MULTIPLY     : return *fst_value * *snd_value;
+        case DIVIDE       : return *fst_value / *snd_value;
+    }
 
     return nullptr;
 }

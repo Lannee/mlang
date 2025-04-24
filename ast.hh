@@ -15,6 +15,12 @@ class type;
 class unit_type;
 class integer_type;
 
+static inline void __error(std::string_view message) 
+    { std::cerr << "Error: " << message << std::endl; exit(1); }
+
+static inline void __warning(std::string_view message) 
+    { std::cerr << "Warning: " << message << std::endl; } 
+
 class context {
 public:
 
@@ -23,6 +29,8 @@ public:
     void set_global_variable(std::string_view name, const type* value);
 
     void set_local_variable(std::string_view name, const type* value);
+
+    void assign_to_variable(std::string_view name, const type* value);
 
     const type *get_variable(std::string_view name);
 
@@ -46,15 +54,27 @@ public:
 enum type_kind {
     UNIT,
     INTEGER,
-    STRING,
-    STRUCT
+    STRING
 };
+
+std::string type_kind_to_string(type_kind kind);
 
 class type : public expression {
 public:
     virtual type_kind kind() const = 0;
     virtual std::string repr() const = 0;
     virtual integer_type to_integer_type() const = 0;
+
+    virtual type *operator+ (type const &obj) const = 0;
+    virtual type *operator- (type const &obj) const = 0;
+    virtual type *operator* (type const &obj) const = 0;
+    virtual type *operator/ (type const &obj) const = 0;
+    virtual type *operator> (type const &obj) const = 0;
+    virtual type *operator< (type const &obj) const = 0;
+    virtual type *operator>=(type const &obj) const = 0;
+    virtual type *operator<=(type const &obj) const = 0;
+    virtual type *operator==(type const &obj) const = 0;
+    virtual type *operator!=(type const &obj) const = 0;
 };
 
 class integer_type : public type {
@@ -71,16 +91,16 @@ public:
 
     uint32_t data__() const { return data_; }
 
-    integer_type operator+ (integer_type const& obj) const { return data_ +  obj.data_; }
-    integer_type operator- (integer_type const& obj) const { return data_ -  obj.data_; }
-    integer_type operator* (integer_type const& obj) const { return data_ *  obj.data_; }
-    integer_type operator/ (integer_type const& obj) const { return data_ /  obj.data_; }
-    integer_type operator> (integer_type const& obj) const { return data_ >  obj.data_; }
-    integer_type operator< (integer_type const& obj) const { return data_ <  obj.data_; }
-    integer_type operator>=(integer_type const& obj) const { return data_ >= obj.data_; }
-    integer_type operator<=(integer_type const& obj) const { return data_ <= obj.data_; }
-    integer_type operator==(integer_type const& obj) const { return data_ == obj.data_; }
-    integer_type operator!=(integer_type const& obj) const { return data_ != obj.data_; }
+    type *operator+ (type const &obj) const { return new integer_type(data_ + dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator- (type const &obj) const { return new integer_type(data_ - dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator* (type const &obj) const { return new integer_type(data_ * dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator/ (type const &obj) const { return new integer_type(data_ / dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator> (type const &obj) const { return new integer_type(data_ > dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator< (type const &obj) const { return new integer_type(data_ < dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator>=(type const &obj) const { return new integer_type(data_ >= dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator<=(type const &obj) const { return new integer_type(data_ <= dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator==(type const &obj) const { return new integer_type(data_ == dynamic_cast<const integer_type &>(obj).data_); }
+    type *operator!=(type const &obj) const { return new integer_type(data_ != dynamic_cast<const integer_type &>(obj).data_); }
 private:
     uint32_t data_;
 };
@@ -90,7 +110,22 @@ public:
     type_kind kind() const { return type_kind::UNIT; };
     const type *value(context &_) const { return this; }
     std::string repr() const { return "T"; } 
-    integer_type to_integer_type() const override { return 0; } 
+    integer_type to_integer_type() const override { return 0; }
+
+    type *operator+ (type const &obj) const { unsupported_operation(); }
+    type *operator- (type const &obj) const { unsupported_operation(); }
+    type *operator* (type const &obj) const { unsupported_operation(); }
+    type *operator/ (type const &obj) const { unsupported_operation(); }
+    type *operator> (type const &obj) const { unsupported_operation(); }
+    type *operator< (type const &obj) const { unsupported_operation(); }
+    type *operator>=(type const &obj) const { unsupported_operation(); }
+    type *operator<=(type const &obj) const { unsupported_operation(); }
+    type *operator==(type const &obj) const { unsupported_operation(); }
+    type *operator!=(type const &obj) const { unsupported_operation(); }
+
+private:
+    void unsupported_operation() const { __error("Unsupported operation for unit type"); }
+
 };
 
 const unit_type UNIT__{};
@@ -147,7 +182,21 @@ public:
     std::string repr() const { return data_; } 
     integer_type to_integer_type() const override { return data_ != ""; }  
 
-    string_type operator+(string_type const& obj) { return string_type(data_ + obj.data_); }
+    
+    type *operator+ (type const &obj) const { return new string_type(data_ + dynamic_cast<const string_type &>(obj).data_); }
+    type *operator- (type const &obj) const { unsupported_operation(); }
+    type *operator* (type const &obj) const { unsupported_operation(); }
+    type *operator/ (type const &obj) const { unsupported_operation(); }
+    type *operator> (type const &obj) const { return new integer_type(data_ > dynamic_cast<const string_type &>(obj).data_); }
+    type *operator< (type const &obj) const { return new integer_type(data_ < dynamic_cast<const string_type &>(obj).data_); }
+    type *operator>=(type const &obj) const { return new integer_type(data_ >= dynamic_cast<const string_type &>(obj).data_); }
+    type *operator<=(type const &obj) const { return new integer_type(data_ <= dynamic_cast<const string_type &>(obj).data_); }
+    type *operator==(type const &obj) const { return new integer_type(data_ == dynamic_cast<const string_type &>(obj).data_); }
+    type *operator!=(type const &obj) const { return new integer_type(data_ != dynamic_cast<const string_type &>(obj).data_); }
+    
+private:
+    void unsupported_operation() const { __error("Unsupported operation for string type"); }
+
 private:
     std::string data_;
 };
@@ -175,6 +224,19 @@ private:
     const expression *expr_;
 };
 
+class essignment_expression : public expression {
+public:
+    essignment_expression(std::string_view name, const expression *expr) : var_name_(name), expr_(expr) { }
+
+    const type *value(context &ctx) const;
+
+    ~essignment_expression();                                            
+
+private:
+    const std::string var_name_;
+    const expression *expr_;
+};
+
 class variable : public expression {
 public:
     variable(std::string_view name) : name_(name) {}
@@ -185,23 +247,30 @@ private:
 };
 
 
-enum comp_kind {
+enum builtin_binop_kind {
     EQUAL,
     NOTEQUAL,
     GREATER,
     GREATEREQUAL,
     LESS,
-    LESSEQUAL
+    LESSEQUAL,
+    PLUS,
+    MINUS,
+    MULTIPLY,
+    DIVIDE
 };
 
-class comp_expression : public expression {
+std::string builtin_binop_kind_to_string(builtin_binop_kind kind);
+
+
+class builtin_binop_function : public expression {
 public:
-    comp_expression(const expression *l, comp_kind op, const expression *r) : l_(l), op_(op), r_(r) {}
+    builtin_binop_function(builtin_binop_kind op, const expression *fst, const expression *snd) : op_(op), fst_(fst), snd_(snd) {}
     const type *value(context &ctx) const;
 private:
-    const expression *r_;
-    comp_kind op_;
-    const expression *l_;
+    builtin_binop_kind op_;
+    const expression *fst_;
+    const expression *snd_;
 };
 
 class function_call : public expression {

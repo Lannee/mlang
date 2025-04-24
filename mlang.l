@@ -44,6 +44,10 @@ until 			{ return UNTIL; }
 \>\=\?			{ return GREATEREQUAL; }
 \!\=\?			{ return NOTEQUAL; }
 \=\?			{ return EQUAL; }
+\+			    { return PLUS; }
+-			    { return MINUS; }
+\*			    { return MULTIPLY; }
+\/			    { return DIVIDE; }
 
 \=				{ return ASSIGNMENT; }
 T               { return UNIT; }
