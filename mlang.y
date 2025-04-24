@@ -65,6 +65,7 @@ exprs
 expr
     : value                           { $$ = $1; }
     | function_call 
+    | expr builtin_binop expr         { $$ = new mlang::builtin_binop_function($2, $1, $3); }
     | IDENT                           { $$ = new mlang::variable($1); free($1); }
     | BGN exprs END                   { $$ = new mlang::expr_list($2); }
     | LET IDENT ASSIGNMENT expr       { $$ = new mlang::var_decl($2, $4); free($2); }
@@ -78,7 +79,6 @@ function_call
     : PRINT LARROW args                      { $$ = new mlang::print_function($3); }
     | TOSTR LARROW expr                      { $$ = new mlang::tostr_function($3); }
     | TOINT LARROW expr                      { $$ = new mlang::toint_function($3); }
-    | builtin_binop LARROW expr COMMA expr   { $$ = new mlang::builtin_binop_function($1, $3, $5); }
     | IDENT LARROW args                      { $$ = new mlang::function_call($1, $3); }
 ;
 
