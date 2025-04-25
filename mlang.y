@@ -20,7 +20,7 @@ mlang::expr_list *prog;
 
 // token type definition
 %union {
-	uint64_t int_val;
+	int64_t int_val;
 	char *str_val;
     std::vector<const mlang::expression *> *expr_list_t;
     const mlang::expression *expr_t;

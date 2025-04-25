@@ -18,7 +18,7 @@ DIGIT    [0-9]
 %%
 "//".*          ; /* ignore single-line comment */
 [ \t\n]	        ;
-{DIGIT}+		{ yylval.int_val = atoi(yytext); return INT; }
+-*{DIGIT}+		{ yylval.int_val = atoi(yytext); return INT; }
 \"[^\"\n]*\"	{	// remove the quote marks from either end
 					yylval.str_val = (char *)malloc(sizeof(char)*strlen(yytext)-1);
 					strncpy(yylval.str_val, yytext+1, strlen(yytext)-2);

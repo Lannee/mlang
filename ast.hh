@@ -80,7 +80,7 @@ public:
 class integer_type : public type {
 public:
 
-    integer_type(uint32_t data) : data_(data) {}
+    integer_type(int64_t data) : data_(data) {}
 
     type_kind kind() const { return type_kind::INTEGER; };
 
@@ -89,7 +89,7 @@ public:
     std::string repr() const { return std::to_string(data_); }  
     integer_type to_integer_type() const override { return *this; }
 
-    uint32_t data__() const { return data_; }
+    int64_t data__() const { return data_; }
 
     type *operator+ (type const &obj) const { return new integer_type(data_ + dynamic_cast<const integer_type &>(obj).data_); }
     type *operator- (type const &obj) const { return new integer_type(data_ - dynamic_cast<const integer_type &>(obj).data_); }
@@ -102,7 +102,7 @@ public:
     type *operator==(type const &obj) const { return new integer_type(data_ == dynamic_cast<const integer_type &>(obj).data_); }
     type *operator!=(type const &obj) const { return new integer_type(data_ != dynamic_cast<const integer_type &>(obj).data_); }
 private:
-    uint64_t data_;
+    int64_t data_;
 };
 
 class unit_type : public type {
