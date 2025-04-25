@@ -102,7 +102,7 @@ public:
     type *operator==(type const &obj) const { return new integer_type(data_ == dynamic_cast<const integer_type &>(obj).data_); }
     type *operator!=(type const &obj) const { return new integer_type(data_ != dynamic_cast<const integer_type &>(obj).data_); }
 private:
-    uint32_t data_;
+    uint64_t data_;
 };
 
 class unit_type : public type {

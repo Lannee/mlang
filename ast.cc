@@ -69,6 +69,7 @@ std::string builtin_binop_kind_to_string(builtin_binop_kind kind) {
 const type *print_function::value(context &ctx) const {
     for(const auto &expr : *exprs_)
         std::cout << expr->value(ctx)->repr(); 
+    std::cout << std::endl;
     return &UNIT__;
 }
 
