@@ -79,7 +79,6 @@ print_function::~print_function() {
 }
 
 const type *function_call::value(context &ctx) const {
-    std::cout << "function call" << std::endl;
     return &UNIT__;
 }
 

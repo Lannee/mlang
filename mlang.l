@@ -25,7 +25,7 @@ DIGIT    [0-9]
 					yylval.str_val[strlen(yytext)-2] = '\0';	// terminate the string!
 					return STRING;
 				}
-\<- 			{ return LARROW; }
+:	 			{ return ARG_PASS; }
 print           { return PRINT; }
 toint           { return TOINT; }
 tostr           { return TOSTR; }
